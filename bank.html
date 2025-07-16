@@ -113,6 +113,18 @@
 
     // Spending categories
     const spendingCategories = [
+        { title: "Income", items: [
+            { label: "Primary Income Source", question: "What is your main source of income? This is your primary job or business that provides most of your money.", type: "select", options: ["Salary/Wages", "Hourly Pay", "Commission", "Business Income", "Self-Employment", "Social Security", "Disability Benefits", "Pension", "Other"] },
+            { label: "Primary Monthly Income", question: "How much do you earn monthly from your main income source? Enter your average monthly amount from your primary job/business.", type: "number" },
+            { label: "Has Additional Income", question: "Do you have any other regular monthly income sources? These are additional sources that pay you every month (part-time jobs, rental income, etc.).", type: "yesno" },
+            { label: "Additional Income Sources", question: "What other regular monthly income sources do you have? Select all that apply.", type: "multiselect", options: ["Part-time Job", "Freelance Work", "Rental Income", "Interest/Dividends", "Child Support", "Alimony", "Tips/Gratuities", "Overtime Pay", "Online Business", "Other"] },
+            { label: "Additional Monthly Income", question: "How much do you earn monthly from each additional source? Enter the total monthly amount from all additional sources combined.", type: "number" },
+            { label: "Total Monthly Income", question: "What is your total monthly regular income? This is the sum of all your monthly income sources.", type: "calculated" },
+            { label: "Has Irregular Income", question: "Do you receive any irregular income throughout the year? These are one-time or occasional payments (bonuses, seasonal work, etc.).", type: "yesno" },
+            { label: "Irregular Income Types", question: "What types of irregular income do you receive? Select all that apply.", type: "multiselect", options: ["Bonuses", "Seasonal Work", "Capital Gains", "Royalties", "Severance Pay", "Unemployment Benefits", "Workers Compensation", "Lottery/Gambling", "Other"] },
+            { label: "Annual Irregular Income", question: "How much do you earn annually from irregular income? Enter the total amount you receive per year from all irregular sources.", type: "number" },
+            { label: "Total Annual Income", question: "What is your total annual income? This helps us understand your complete financial picture.", type: "calculated" }
+        ]},
         { title: "Housing", items: [
             { label: "Rent/Mortgage", question: "What is your monthly rent or mortgage payment?" },
             { label: "Property Taxes", question: "How much do you pay monthly for property taxes?" },
@@ -287,13 +299,164 @@
 
         questionTitle.textContent = currentCategory.title;
         questionText.textContent = currentItem.question;
-        amountInput.value = userResponses[currentItem.label] || '';
-        amountInput.focus();
+        
+        // Clear previous input
+        const inputGroup = document.querySelector('.input-group');
+        inputGroup.innerHTML = '';
+        
+        // Handle different question types
+        if (currentItem.type === 'select') {
+            const select = document.createElement('select');
+            select.className = 'amount-input';
+            select.id = 'amountInput';
+            
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select an option...';
+            select.appendChild(defaultOption);
+            
+            currentItem.options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+            
+            select.value = userResponses[currentItem.label] || '';
+            inputGroup.appendChild(select);
+            
+        } else if (currentItem.type === 'yesno') {
+            const buttonGroup = document.createElement('div');
+            buttonGroup.style.display = 'flex';
+            buttonGroup.style.gap = '10px';
+            buttonGroup.style.justifyContent = 'center';
+            
+            const yesBtn = document.createElement('button');
+            yesBtn.type = 'button';
+            yesBtn.className = 'next-btn';
+            yesBtn.textContent = 'Yes';
+            yesBtn.onclick = () => {
+                userResponses[currentItem.label] = 'yes';
+                nextBtn.click();
+            };
+            
+            const noBtn = document.createElement('button');
+            noBtn.type = 'button';
+            noBtn.className = 'next-btn';
+            noBtn.textContent = 'No';
+            noBtn.onclick = () => {
+                userResponses[currentItem.label] = 'no';
+                nextBtn.click();
+            };
+            
+            buttonGroup.appendChild(yesBtn);
+            buttonGroup.appendChild(noBtn);
+            inputGroup.appendChild(buttonGroup);
+            
+        } else if (currentItem.type === 'multiselect') {
+            const checkboxGroup = document.createElement('div');
+            checkboxGroup.style.textAlign = 'left';
+            checkboxGroup.style.maxHeight = '200px';
+            checkboxGroup.style.overflowY = 'auto';
+            
+            currentItem.options.forEach(option => {
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.style.marginBottom = '10px';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = option;
+                checkbox.value = option;
+                
+                const label = document.createElement('label');
+                label.htmlFor = option;
+                label.textContent = option;
+                label.style.marginLeft = '10px';
+                label.style.color = '#ccc';
+                
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(label);
+                checkboxGroup.appendChild(checkboxDiv);
+            });
+            
+            inputGroup.appendChild(checkboxGroup);
+            
+        } else if (currentItem.type === 'calculated') {
+            const displayDiv = document.createElement('div');
+            displayDiv.className = 'amount-input';
+            displayDiv.style.backgroundColor = '#444';
+            displayDiv.style.border = '1px solid #666';
+            
+            let calculatedValue = 0;
+            
+            if (currentItem.label === 'Total Monthly Income') {
+                const primary = parseFloat(userResponses['Primary Monthly Income']) || 0;
+                const additional = parseFloat(userResponses['Additional Monthly Income']) || 0;
+                calculatedValue = primary + additional;
+            } else if (currentItem.label === 'Total Annual Income') {
+                const monthly = parseFloat(userResponses['Total Monthly Income']) || 0;
+                const irregular = parseFloat(userResponses['Annual Irregular Income']) || 0;
+                calculatedValue = (monthly * 12) + irregular;
+            }
+            
+            displayDiv.textContent = `$${calculatedValue.toFixed(2)}`;
+            userResponses[currentItem.label] = calculatedValue.toFixed(2);
+            inputGroup.appendChild(displayDiv);
+            
+        } else {
+            // Default number input
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'amount-input';
+            input.id = 'amountInput';
+            input.placeholder = '$0';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = userResponses[currentItem.label] || '';
+            inputGroup.appendChild(input);
+        }
+        
+        // Focus on input if it exists
+        const input = document.getElementById('amountInput');
+        if (input) input.focus();
     }
 
     // Next button click
     nextBtn.addEventListener('click', function() {
         const totalQuestions = spendingCategories.reduce((sum, category) => sum + category.items.length, 0);
+        
+        // Save current response based on question type
+        let questionCount = 0;
+        let currentItem = null;
+
+        for (const category of spendingCategories) {
+            for (const item of category.items) {
+                if (questionCount === currentQuestionIndex) {
+                    currentItem = item;
+                    break;
+                }
+                questionCount++;
+            }
+            if (currentItem) break;
+        }
+
+        if (currentItem.type === 'select') {
+            const select = document.getElementById('amountInput');
+            userResponses[currentItem.label] = select.value;
+        } else if (currentItem.type === 'multiselect') {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const selected = [];
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selected.push(checkbox.value);
+                }
+            });
+            userResponses[currentItem.label] = selected;
+        } else if (currentItem.type === 'number' || !currentItem.type) {
+            const input = document.getElementById('amountInput');
+            userResponses[currentItem.label] = input.value;
+        }
+        // For yesno and calculated types, the value is already saved
         
         if (currentQuestionIndex < totalQuestions - 1) {
             currentQuestionIndex++;
@@ -325,23 +488,27 @@
         nextBtn.click();
     });
 
-    // Amount input change
-    amountInput.addEventListener('input', function() {
-        let questionCount = 0;
-        let currentItem = null;
+    // Amount input change (for number inputs only)
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'amountInput' && e.target.type === 'number') {
+            let questionCount = 0;
+            let currentItem = null;
 
-        for (const category of spendingCategories) {
-            for (const item of category.items) {
-                if (questionCount === currentQuestionIndex) {
-                    currentItem = item;
-                    break;
+            for (const category of spendingCategories) {
+                for (const item of category.items) {
+                    if (questionCount === currentQuestionIndex) {
+                        currentItem = item;
+                        break;
+                    }
+                    questionCount++;
                 }
-                questionCount++;
+                if (currentItem) break;
             }
-            if (currentItem) break;
-        }
 
-        userResponses[currentItem.label] = this.value;
+            if (currentItem && (currentItem.type === 'number' || !currentItem.type)) {
+                userResponses[currentItem.label] = e.target.value;
+            }
+        }
     });
 
     // Display summary
