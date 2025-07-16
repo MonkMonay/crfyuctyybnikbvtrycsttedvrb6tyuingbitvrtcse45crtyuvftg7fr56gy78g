@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bonobudget</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700&display=swap">
+    <style>
+        body { background: #111; color: #fff; font-family: 'Montserrat', Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: #222; padding: 40px 30px; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.2); min-width: 320px; text-align: center; }
+        h2 { margin-top: 0; }
+        button { width: 100%; padding: 12px; border-radius: 20px; border: none; background: #4caf50; color: #fff; font-size: 16px; margin-top: 20px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #388e3c; }
+        .link { color: #4caf50; text-decoration: none; display: block; text-align: center; margin-top: 18px; }
+        .link:hover { text-decoration: underline; }
+    </style>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <!-- Firebase Auth SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome to your Dashboard</h2>
+        <div id="welcome"></div>
+        <button id="logoutBtn">Logout</button>
+        <a class="link" href="index.html">Back to Home</a>
+    </div>
+    <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZhftowlNqPvBMuWJ-5NWqfA-Yb59TehQ",
+      authDomain: "bonobudget.firebaseapp.com",
+      projectId: "bonobudget",
+      storageBucket: "bonobudget.firebasestorage.app",
+      messagingSenderId: "42259683918",
+      appId: "1:42259683918:web:ab931da84be09ffa69811f",
+      measurementId: "G-ZBM8LKGR01"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const welcome = document.getElementById('welcome');
+    const logoutBtn = document.getElementById('logoutBtn');
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            welcome.textContent = `Logged in as: ${user.email}`;
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+    logoutBtn.onclick = function() {
+        auth.signOut();
+    };
+    </script>
+</body>
+</html> 
