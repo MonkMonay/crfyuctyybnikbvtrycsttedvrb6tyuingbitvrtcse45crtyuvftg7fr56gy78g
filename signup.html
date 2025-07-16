@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Bonobudget</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700&display=swap">
+    <style>
+        body { background: #111; color: #fff; font-family: 'Montserrat', Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: #222; padding: 40px 30px; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.2); min-width: 320px; }
+        h2 { margin-top: 0; text-align: center; }
+        input[type="email"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #181818; color: #fff; font-size: 16px; }
+        button { width: 100%; padding: 12px; border-radius: 20px; border: none; background: #4caf50; color: #fff; font-size: 16px; margin-top: 10px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #388e3c; }
+        .error { color: #ff5252; margin-top: 10px; text-align: center; }
+        .link { color: #4caf50; text-decoration: none; display: block; text-align: center; margin-top: 18px; }
+        .link:hover { text-decoration: underline; }
+    </style>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <!-- Firebase Auth SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Sign Up for Bonobudget</h2>
+        <form id="signupForm">
+            <input type="email" id="signupEmail" placeholder="Email" required><br>
+            <input type="password" id="signupPassword" placeholder="Password" required><br>
+            <input type="password" id="signupConfirm" placeholder="Confirm Password" required><br>
+            <button type="submit">Sign Up</button>
+        </form>
+        <div id="signupError" class="error"></div>
+        <a class="link" href="login.html">Already have an account? Login</a>
+    </div>
+    <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZhftowlNqPvBMuWJ-5NWqfA-Yb59TehQ",
+      authDomain: "bonobudget.firebaseapp.com",
+      projectId: "bonobudget",
+      storageBucket: "bonobudget.firebasestorage.app",
+      messagingSenderId: "42259683918",
+      appId: "1:42259683918:web:ab931da84be09ffa69811f",
+      measurementId: "G-ZBM8LKGR01"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const signupForm = document.getElementById('signupForm');
+    const signupError = document.getElementById('signupError');
+    signupForm.onsubmit = async function(e) {
+        e.preventDefault();
+        signupError.textContent = '';
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const confirm = document.getElementById('signupConfirm').value;
+        if (!email || !password || !confirm) {
+            signupError.textContent = 'All fields are required.';
+            return;
+        }
+        if (password !== confirm) {
+            signupError.textContent = 'Passwords do not match.';
+            return;
+        }
+        try {
+            await auth.createUserWithEmailAndPassword(email, password);
+            window.location.href = 'index.html';
+        } catch (err) {
+            signupError.textContent = err.message;
+        }
+    };
+    </script>
+</body>
+</html> 
