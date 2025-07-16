@@ -64,7 +64,7 @@
         }
         try {
             await auth.createUserWithEmailAndPassword(email, password);
-            window.location.href = 'index.html';
+            window.location.href = 'dashboard.html';
         } catch (err) {
             signupError.textContent = err.message;
         }

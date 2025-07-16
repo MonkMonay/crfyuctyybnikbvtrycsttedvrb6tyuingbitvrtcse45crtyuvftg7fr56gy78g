@@ -54,7 +54,7 @@
         const password = document.getElementById('loginPassword').value;
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            window.location.href = 'index.html';
+            window.location.href = 'dashboard.html';
         } catch (err) {
             loginError.textContent = err.message;
         }
