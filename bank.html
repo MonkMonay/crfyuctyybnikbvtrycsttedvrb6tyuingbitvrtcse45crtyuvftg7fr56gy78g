@@ -43,6 +43,13 @@
         .total-text { font-size: 20px; color: #4caf50; font-weight: bold; }
         .edit-btn { background: #2196f3; color: #fff; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; margin-top: 20px; transition: background 0.2s; }
         .edit-btn:hover { background: #1976d2; }
+        .summary-column {
+            padding: 20px;
+            border-right: 1px solid #333; /* Add a separator between columns */
+        }
+        .summary-column:last-child {
+            border-right: none; /* Remove separator for the last column */
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -513,35 +520,117 @@
 
     // Display summary
     function displaySummary() {
-        let html = '';
-        let total = 0;
+        let incomeHtml = '';
+        let spendingHtml = '';
+        let totalIncome = 0;
+        let totalSpending = 0;
 
+        // Display Income
+        incomeHtml += `<div class="summary-title">Income Summary</div>`;
         for (const category of spendingCategories) {
-            html += `<div class="category-section">
-                <div class="category-title">${category.title}</div>`;
-            
-            for (const item of category.items) {
-                const value = userResponses[item.label];
-                if (value && value !== 'skipped') {
-                    const numValue = parseFloat(value) || 0;
-                    total += numValue;
-                    html += `<div class="expense-item">
-                        <div class="expense-label">${item.label}</div>
-                        <div class="expense-amount">$${numValue.toFixed(2)}</div>
-                    </div>`;
-                } else if (value === 'skipped') {
-                    html += `<div class="expense-item">
-                        <div class="expense-label">${item.label}</div>
-                        <div class="expense-amount skipped">Skipped</div>
-                    </div>`;
+            if (category.title === 'Income') {
+                for (const item of category.items) {
+                    const value = userResponses[item.label];
+                    if (value && value !== 'skipped') {
+                        if (item.label === 'Total Annual Income') {
+                            const numValue = parseFloat(value) || 0;
+                            totalIncome = numValue;
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
+                            </div>`;
+                        } else if (item.label === 'Total Monthly Income') {
+                            const numValue = parseFloat(value) || 0;
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
+                            </div>`;
+                        } else if (Array.isArray(value)) {
+                            // For multiselect items
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">${value.join(', ')}</div>
+                            </div>`;
+                        } else if (typeof value === 'string' && (value === 'yes' || value === 'no')) {
+                            // For yes/no items
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">${value === 'yes' ? 'Yes' : 'No'}</div>
+                            </div>`;
+                        } else if (typeof value === 'string') {
+                            // For select items
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">${value}</div>
+                            </div>`;
+                        } else {
+                            const numValue = parseFloat(value) || 0;
+                            incomeHtml += `<div class="expense-item">
+                                <div class="expense-label">${item.label}</div>
+                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
+                            </div>`;
+                        }
+                    } else if (value === 'skipped') {
+                        incomeHtml += `<div class="expense-item">
+                            <div class="expense-label">${item.label}</div>
+                            <div class="expense-amount skipped">Skipped</div>
+                        </div>`;
+                    }
                 }
+                break;
             }
-            
-            html += `</div>`;
         }
 
-        summaryContent.innerHTML = html;
-        totalAmount.textContent = `Total Monthly Spending: $${total.toFixed(2)}`;
+        // Display Spending
+        spendingHtml += `<div class="summary-title">Spending Summary</div>`;
+        for (const category of spendingCategories) {
+            if (category.title !== 'Income') {
+                spendingHtml += `<div class="category-section">
+                    <div class="category-title">${category.title}</div>`;
+                
+                for (const item of category.items) {
+                    const value = userResponses[item.label];
+                    if (value && value !== 'skipped') {
+                        const numValue = parseFloat(value) || 0;
+                        totalSpending += numValue;
+                        spendingHtml += `<div class="expense-item">
+                            <div class="expense-label">${item.label}</div>
+                            <div class="expense-amount">$${numValue.toFixed(2)}</div>
+                        </div>`;
+                    } else if (value === 'skipped') {
+                        spendingHtml += `<div class="expense-item">
+                            <div class="expense-label">${item.label}</div>
+                            <div class="expense-amount skipped">Skipped</div>
+                        </div>`;
+                    }
+                }
+                
+                spendingHtml += `</div>`;
+            }
+        }
+
+        // Create two-column layout
+        const summaryLayout = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div class="summary-column">
+                    ${incomeHtml}
+                </div>
+                <div class="summary-column">
+                    ${spendingHtml}
+                </div>
+            </div>
+            <div class="total-section" style="margin-top: 30px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="total-text">Annual Income: $${totalIncome.toFixed(2)}</div>
+                    <div class="total-text">Annual Spending: $${(totalSpending * 12).toFixed(2)}</div>
+                </div>
+                <div class="total-text" style="margin-top: 15px; font-size: 24px; color: ${totalIncome > (totalSpending * 12) ? '#4caf50' : '#ff5252'};">
+                    ${totalIncome > (totalSpending * 12) ? 'Surplus' : 'Deficit'}: $${Math.abs(totalIncome - (totalSpending * 12)).toFixed(2)}
+                </div>
+            </div>
+        `;
+
+        summaryContent.innerHTML = summaryLayout;
     }
 
     // Edit button click
