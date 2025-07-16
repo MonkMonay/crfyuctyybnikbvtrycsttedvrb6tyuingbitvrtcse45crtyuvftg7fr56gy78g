@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank - Bonobudget</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700&display=swap">
+    <style>
+        body { background: #111; color: #fff; font-family: 'Montserrat', Arial, sans-serif; margin: 0; }
+        .header { background: #222; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 0 0 20px 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #4caf50; }
+        .nav { display: flex; gap: 30px; }
+        .nav-item { color: #ccc; text-decoration: none; padding: 12px 20px; border-radius: 15px; transition: all 0.2s; cursor: pointer; }
+        .nav-item:hover { background: #333; color: #fff; }
+        .nav-item.active { background: #4caf50; color: #fff; }
+        .profile { display: flex; align-items: center; gap: 15px; }
+        .profile-email { color: #ccc; }
+        .logout-btn { background: #ff5252; color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; transition: background 0.2s; }
+        .logout-btn:hover { background: #d32f2f; }
+        .container { padding: 30px; max-width: 800px; margin: 0 auto; }
+        .welcome { background: #222; padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        h1 { margin: 0 0 10px 0; color: #4caf50; }
+        .welcome-text { color: #ccc; font-size: 18px; }
+        .category-section { background: #222; padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .category-title { color: #4caf50; font-size: 20px; margin-bottom: 15px; font-weight: bold; }
+        .expense-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #333; }
+        .expense-item:last-child { border-bottom: none; }
+        .expense-label { flex: 1; color: #ccc; }
+        .expense-inputs { display: flex; gap: 10px; align-items: center; }
+        .amount-input { background: #333; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 10px; width: 120px; }
+        .skip-btn { background: #666; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+        .skip-btn:hover { background: #777; }
+        .skip-btn.active { background: #ff9800; }
+        .submit-btn { background: #4caf50; color: #fff; border: none; padding: 15px 30px; border-radius: 15px; cursor: pointer; font-size: 16px; margin-top: 20px; transition: background 0.2s; }
+        .submit-btn:hover { background: #388e3c; }
+        .progress-bar { background: #333; height: 8px; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { background: #4caf50; height: 100%; transition: width 0.3s; }
+    </style>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <!-- Firebase Auth SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Bonobudget</div>
+        <div class="nav">
+            <div class="nav-item" onclick="window.location.href='dashboard.html'">Dashboard</div>
+            <div class="nav-item active">Bank</div>
+            <div class="nav-item">Goals</div>
+        </div>
+        <div class="profile">
+            <div class="profile-email" id="userEmail"></div>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="welcome">
+            <h1>Set Up Your Spending Categories</h1>
+            <div class="welcome-text">Let's get to know your spending habits. Enter your monthly amounts or skip categories that don't apply to you.</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <form id="spendingForm">
+            <!-- Housing -->
+            <div class="category-section">
+                <div class="category-title">🏠 Housing</div>
+                <div class="expense-item">
+                    <div class="expense-label">Rent/Mortgage</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Property Taxes</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Home Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Utilities (Electricity, Water, Gas)</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Internet & Phone</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Maintenance/Repairs</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">HOA Fees</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transportation -->
+            <div class="category-section">
+                <div class="category-title">🚗 Transportation</div>
+                <div class="expense-item">
+                    <div class="expense-label">Car Payment/Lease</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Gas/Fuel</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Car Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Maintenance/Repairs</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Public Transportation</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Parking Fees</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Uber/Lyft</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food & Dining -->
+            <div class="category-section">
+                <div class="category-title">🍽️ Food & Dining</div>
+                <div class="expense-item">
+                    <div class="expense-label">Groceries</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Restaurants</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Fast Food</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Coffee Shops</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Food Delivery</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Alcohol/Bars</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal & Health -->
+            <div class="category-section">
+                <div class="category-title">💊 Personal & Health</div>
+                <div class="expense-item">
+                    <div class="expense-label">Health Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Doctor Visits</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Prescriptions</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Dental Care</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Vision Care</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Gym Membership</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Haircuts/Salon</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Personal Hygiene Products</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Clothing/Shoes</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Cosmetics/Beauty</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entertainment & Lifestyle -->
+            <div class="category-section">
+                <div class="category-title">🎬 Entertainment & Lifestyle</div>
+                <div class="expense-item">
+                    <div class="expense-label">Streaming Services (Netflix, Hulu, etc.)</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Movies/Theater</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Concerts/Events</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Books/Magazines</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Video Games</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Hobbies</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Vacations</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Hotels</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Flights</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Car Rentals</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Travel Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Obligations -->
+            <div class="category-section">
+                <div class="category-title">💰 Financial Obligations</div>
+                <div class="expense-item">
+                    <div class="expense-label">Credit Cards</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Student Loans</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Personal Loans</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Medical Debt</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Emergency Fund</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Retirement Savings</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Investment Accounts</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">College Savings</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other -->
+            <div class="category-section">
+                <div class="category-title">📚 Other</div>
+                <div class="expense-item">
+                    <div class="expense-label">Tuition</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Books/Supplies</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Courses/Certifications</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Birthday/Holiday Gifts</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Charitable Donations</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Wedding Gifts</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Life Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Disability Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Pet Insurance</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Pet Food</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Vet Visits</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+                <div class="expense-item">
+                    <div class="expense-label">Pet Supplies</div>
+                    <div class="expense-inputs">
+                        <input type="number" class="amount-input" placeholder="$0" min="0" step="0.01">
+                        <button type="button" class="skip-btn">Skip</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Save My Spending Categories</button>
+        </form>
+    </div>
+
+    <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZhftowlNqPvBMuWJ-5NWqfA-Yb59TehQ",
+      authDomain: "bonobudget.firebaseapp.com",
+      projectId: "bonobudget",
+      storageBucket: "bonobudget.firebasestorage.app",
+      messagingSenderId: "42259683918",
+      appId: "1:42259683918:web:ab931da84be09ffa69811f",
+      measurementId: "G-ZBM8LKGR01"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const userEmail = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const progressFill = document.getElementById('progressFill');
+    const spendingForm = document.getElementById('spendingForm');
+
+    // Check authentication
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            userEmail.textContent = user.email;
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Logout functionality
+    logoutBtn.onclick = function() {
+        auth.signOut();
+    };
+
+    // Skip button functionality
+    document.querySelectorAll('.skip-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            if (this.classList.contains('active')) {
+                this.classList.remove('active');
+                this.textContent = 'Skip';
+                input.disabled = false;
+                input.value = '';
+            } else {
+                this.classList.add('active');
+                this.textContent = 'Skipped';
+                input.disabled = true;
+                input.value = '';
+            }
+            updateProgress();
+        });
+    });
+
+    // Progress tracking
+    function updateProgress() {
+        const inputs = document.querySelectorAll('.amount-input');
+        const totalInputs = inputs.length;
+        let filledInputs = 0;
+        
+        inputs.forEach(input => {
+            if (input.value !== '' || input.disabled) {
+                filledInputs++;
+            }
+        });
+        
+        const progress = (filledInputs / totalInputs) * 100;
+        progressFill.style.width = progress + '%';
+    }
+
+    // Form submission
+    spendingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = {};
+        
+        document.querySelectorAll('.expense-item').forEach(item => {
+            const label = item.querySelector('.expense-label').textContent;
+            const input = item.querySelector('.amount-input');
+            const skipBtn = item.querySelector('.skip-btn');
+            
+            if (skipBtn.classList.contains('active')) {
+                formData[label] = 'skipped';
+            } else {
+                formData[label] = input.value || 0;
+            }
+        });
+        
+        // Save to Firebase (you can implement this later)
+        console.log('Spending data:', formData);
+        alert('Your spending categories have been saved!');
+        window.location.href = 'dashboard.html';
+    });
+
+    // Update progress on input changes
+    document.querySelectorAll('.amount-input').forEach(input => {
+        input.addEventListener('input', updateProgress);
+    });
+    </script>
+</body>
+</html> 
