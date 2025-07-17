@@ -1,0 +1,34 @@
+.mat-dialog-container {
+  display: grid;
+  place-items: center;
+  min-width: 320px;
+  min-height: 320px;
+  padding: 32px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  background: #fff;
+}
+
+form[ngform] {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  justify-items: center;
+}
+
+mat-form-field {
+  width: 100%;
+  max-width: 320px;
+}
+
+button[type="submit"] {
+  width: 100%;
+  max-width: 320px;
+}
+
+.error {
+  color: #c00;
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+} 

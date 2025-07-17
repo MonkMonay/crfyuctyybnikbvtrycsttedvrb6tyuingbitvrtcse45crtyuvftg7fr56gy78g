@@ -1,0 +1,41 @@
+<!-- Login Dialog -->
+<ng-template #loginDialog>
+  <div class="dialog-content">
+    <h2 mat-dialog-title>Login</h2>
+    <form (ngSubmit)="login()" #loginForm="ngForm">
+      <mat-form-field appearance="fill">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required>
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" [(ngModel)]="loginPassword" name="loginPassword" required>
+      </mat-form-field>
+      <div class="error" *ngIf="loginError">{{ loginError }}</div>
+      <button mat-raised-button color="primary" type="submit">Login</button>
+    </form>
+  </div>
+</ng-template>
+
+<!-- Signup Dialog -->
+<ng-template #signupDialog>
+  <div class="dialog-content">
+    <h2 mat-dialog-title>Sign Up</h2>
+    <form (ngSubmit)="signup()" #signupForm="ngForm">
+      <mat-form-field appearance="fill">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" [(ngModel)]="signupEmail" name="signupEmail" required>
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" [(ngModel)]="signupPassword" name="signupPassword" required>
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Confirm Password</mat-label>
+        <input matInput type="password" [(ngModel)]="signupConfirm" name="signupConfirm" required>
+      </mat-form-field>
+      <div class="error" *ngIf="signupError">{{ signupError }}</div>
+      <button mat-raised-button color="accent" type="submit">Sign Up</button>
+    </form>
+  </div>
+</ng-template> 
