@@ -21,6 +21,8 @@
         .welcome { background: #222; padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         h1 { margin: 0 0 10px 0; color: #4caf50; }
         .welcome-text { color: #ccc; font-size: 18px; }
+        .returntoindex { text-decoration: none; color: #4caf50; }
+        .returntoindex:hover, .returntoindex:visited, .returntoindex:active { color: #4caf50; }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -29,7 +31,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">Bonobudget</div>
+        <div class="logo"><a href="https://bonobudget.com" style="text-decoration: none; color: #4caf50;" id="returntoindex" >Bonobudget</a></div>
         <div class="nav">
             <div class="nav-item active">Dashboard</div>
             <div class="nav-item" onclick="window.location.href='bank.html'">Bank</div>
