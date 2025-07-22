@@ -28,6 +28,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <!-- Firebase Auth SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
     <div class="header">
@@ -61,6 +62,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
     const welcome = document.getElementById('welcome');
     const userEmail = document.getElementById('userEmail');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -68,6 +70,7 @@
         if (user) {
             welcome.textContent = `You're logged in as: ${user.email}`;
             userEmail.textContent = user.email;
+            loadSankeyData(user.uid);
         } else {
             window.location.href = 'login.html';
         }
@@ -75,6 +78,59 @@
     logoutBtn.onclick = function() {
         auth.signOut();
     };
+
+    // Add Sankey diagram container
+    const containerDiv = document.querySelector('.container');
+    const sankeySection = document.createElement('div');
+    sankeySection.innerHTML = `
+        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
+        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
+    `;
+    containerDiv.appendChild(sankeySection);
+
+    // Load Google Charts
+    google.charts.load('current', {'packages':['sankey']});
+
+    function loadSankeyData(uid) {
+        db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            // Example: group by category and sum values
+            const categories = [
+                'Housing', 'Transportation', 'Food & Dining', 'Personal & Health', 'Entertainment & Lifestyle', 'Financial Obligations', 'Other'
+            ];
+            const categoryTotals = {};
+            for (const key in data) {
+                for (const cat of categories) {
+                    if (key.toLowerCase().includes(cat.toLowerCase())) {
+                        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(data[key]) || 0;
+                    }
+                }
+            }
+            // Prepare Sankey data
+            const sankeyData = [['Income', 'Category', 'Amount']];
+            let totalIncome = parseFloat(data['Total Monthly Income'] || 0);
+            for (const cat of categories) {
+                if (categoryTotals[cat]) {
+                    sankeyData.push(['Income', cat, categoryTotals[cat]]);
+                }
+            }
+            // Draw chart
+            google.charts.setOnLoadCallback(() => drawSankey(sankeyData));
+        });
+    }
+
+    function drawSankey(sankeyData) {
+        const data = google.visualization.arrayToDataTable(sankeyData);
+        const chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+        chart.draw(data, {
+            sankey: {
+                node: { label: { fontName: 'Montserrat', fontSize: 16, color: '#fff', bold: true }, color: { fill: '#222' } },
+                link: { color: { fill: '#FFD700', fillOpacity: 0.7 } }
+            },
+            backgroundColor: 'transparent'
+        });
+    }
     </script>
 </body>
 </html> 
