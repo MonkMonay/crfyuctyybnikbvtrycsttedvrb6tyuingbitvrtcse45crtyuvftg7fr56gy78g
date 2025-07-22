@@ -353,6 +353,18 @@
             noBtn.textContent = 'No';
             noBtn.onclick = () => {
                 userResponses[currentItem.label] = 'no';
+                // Custom skip logic for follow-up questions
+                if (currentItem.label === 'Has Additional Income') {
+                    // Skip 'Additional Income Sources' and 'Additional Monthly Income'
+                    currentQuestionIndex += 2;
+                    showCurrentQuestion();
+                    return;
+                } else if (currentItem.label === 'Has Irregular Income') {
+                    // Skip 'Irregular Income Types' and 'Annual Irregular Income'
+                    currentQuestionIndex += 2;
+                    showCurrentQuestion();
+                    return;
+                }
                 nextBtn.click();
             };
             
