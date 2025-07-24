@@ -48,6 +48,8 @@
             <h1>Welcome to your Dashboard</h1>
             <div class="welcome-text" id="welcome"></div>
         </div>
+        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
+        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
     </div>
     <script>
     // Initialize Firebase
@@ -78,15 +80,6 @@
     logoutBtn.onclick = function() {
         auth.signOut();
     };
-
-    // Add Sankey diagram container
-    const containerDiv = document.querySelector('.container');
-    const sankeySection = document.createElement('div');
-    sankeySection.innerHTML = `
-        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
-        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
-    `;
-    containerDiv.appendChild(sankeySection);
 
     // Load Google Charts
     google.charts.load('current', {'packages':['sankey']});
