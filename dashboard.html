@@ -44,12 +44,12 @@
         </div>
     </div>
     <div class="container">
-        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
-        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#111;border-radius:16px;padding:20px;z-index:10;box-shadow:0 8px 32px rgba(255,215,0,0.25);"></div>
         <div class="welcome" style="margin-bottom: 60px;">
             <h1>Welcome to your Dashboard</h1>
             <div class="welcome-text" id="welcome"></div>
         </div>
+        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
+        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
     </div>
     <script>
     // Initialize Firebase
@@ -129,18 +129,10 @@
         const chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
         chart.draw(data, {
             sankey: {
-                node: {
-                    label: { fontName: 'Montserrat', fontSize: 18, color: '#FFD700', bold: true },
-                    color: { fill: '#222' },
-                    nodePadding: 30
-                },
-                link: {
-                    colorMode: 'gradient',
-                    colors: ['#FFD700', '#FF5252', '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#00E676'],
-                    fillOpacity: 0.85
-                }
+                node: { label: { fontName: 'Montserrat', fontSize: 16, color: '#fff', bold: true }, color: { fill: '#222' } },
+                link: { color: { fill: '#FFD700', fillOpacity: 0.7 } }
             },
-            backgroundColor: 'transparent'
+            backgroundColor: 'red'
         });
     }
     </script>
