@@ -134,7 +134,7 @@
         ]},
         { title: "Housing", items: [
             { label: "Rent/Mortgage", question: "What is your monthly rent or mortgage payment?" },
-            { label: "Mortgage Interest Rate", question: "What is the interest rate on your mortgage loan? (Enter as a percentage, e.g., 3.5)", type: "number" },
+            { label: "Mortgage Interest Rate & Principal", question: "What is the interest rate on your mortgage loan? (Enter as a percentage, e.g., 3.5) And what is the principal on your mortgage?", type: "interest_and_principal" },
             { label: "Property Taxes", question: "How much do you pay monthly for property taxes?" },
             { label: "Home Insurance", question: "What is your monthly home insurance cost?" },
             { label: "Utilities (Electricity, Water, Gas)", question: "How much do you spend monthly on utilities?" },
@@ -423,7 +423,28 @@
             userResponses[currentItem.label] = calculatedValue.toFixed(2);
             inputGroup.appendChild(displayDiv);
             
-        } else {
+        } else if (currentItem.type === 'interest_and_principal') {
+            const interestInput = document.createElement('input');
+            interestInput.type = 'number';
+            interestInput.className = 'amount-input';
+            interestInput.id = 'interestInput';
+            interestInput.placeholder = 'Interest Rate (%)';
+            interestInput.min = '0';
+            interestInput.step = '0.01';
+            interestInput.value = userResponses['Mortgage Interest Rate'] || '';
+            inputGroup.appendChild(interestInput);
+
+            const principalInput = document.createElement('input');
+            principalInput.type = 'number';
+            principalInput.className = 'amount-input';
+            principalInput.id = 'principalInput';
+            principalInput.placeholder = 'Principal ($)';
+            principalInput.min = '0';
+            principalInput.step = '0.01';
+            principalInput.value = userResponses['Mortgage Principal'] || '';
+            inputGroup.appendChild(principalInput);
+        }
+        else {
             // Default number input
             const input = document.createElement('input');
             input.type = 'number';
@@ -475,6 +496,11 @@
         } else if (currentItem.type === 'number' || !currentItem.type) {
             const input = document.getElementById('amountInput');
             userResponses[currentItem.label] = input.value;
+        } else if (currentItem.type === 'interest_and_principal') {
+            const interestInput = document.getElementById('interestInput');
+            const principalInput = document.getElementById('principalInput');
+            userResponses['Mortgage Interest Rate'] = interestInput.value;
+            userResponses['Mortgage Principal'] = principalInput.value;
         }
         // For yesno and calculated types, the value is already saved
         
