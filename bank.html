@@ -629,6 +629,26 @@
                 
                 for (const item of category.items) {
                     const value = userResponses[item.label];
+                    if (item.label === 'Mortgage Interest Rate & Principal') {
+                        const interest = userResponses['Mortgage Interest Rate'];
+                        const principal = userResponses['Mortgage Principal'];
+                        if ((interest && interest !== 'skipped') || (principal && principal !== 'skipped')) {
+                            spendingHtml += `<div class="expense-item">
+                                <div class="expense-label">Mortgage Interest Rate</div>
+                                <div class="expense-amount">${interest ? interest + '%' : 'N/A'}</div>
+                            </div>`;
+                            spendingHtml += `<div class="expense-item">
+                                <div class="expense-label">Mortgage Principal</div>
+                                <div class="expense-amount">${principal ? '$' + parseFloat(principal).toLocaleString() : 'N/A'}</div>
+                            </div>`;
+                        } else if (interest === 'skipped' && principal === 'skipped') {
+                            spendingHtml += `<div class="expense-item">
+                                <div class="expense-label">Mortgage Interest Rate & Principal</div>
+                                <div class="expense-amount skipped">Skipped</div>
+                            </div>`;
+                        }
+                        continue;
+                    }
                     if (value && value !== 'skipped') {
                         const numValue = parseFloat(value) || 0;
                         totalSpending += numValue;

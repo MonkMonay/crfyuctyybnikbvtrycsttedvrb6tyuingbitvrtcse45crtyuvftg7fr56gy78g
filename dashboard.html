@@ -95,17 +95,29 @@
         db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
             if (!doc.exists) return;
             const data = doc.data();
-            // Example: group by category and sum values
             const categories = [
                 'Housing', 'Transportation', 'Food & Dining', 'Personal & Health', 'Entertainment & Lifestyle', 'Financial Obligations', 'Other'
             ];
+            // Only sum numeric, dollar-amount fields (exclude interest rates, skipped, etc.)
             const categoryTotals = {};
             for (const key in data) {
                 for (const cat of categories) {
-                    if (key.toLowerCase().includes(cat.toLowerCase())) {
-                        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(data[key]) || 0;
+                    // Exclude interest rate and non-numeric/skipped fields
+                    if (
+                        key.toLowerCase().includes(cat.toLowerCase()) &&
+                        !key.toLowerCase().includes('interest rate') &&
+                        !key.toLowerCase().includes('principal') &&
+                        data[key] !== 'skipped' &&
+                        !isNaN(parseFloat(data[key])) &&
+                        isFinite(data[key])
+                    ) {
+                        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(data[key]);
                     }
                 }
+            }
+            // Add Mortgage Principal as a separate flow if present
+            if (data['Mortgage Principal'] && !isNaN(parseFloat(data['Mortgage Principal']))) {
+                categoryTotals['Housing'] = (categoryTotals['Housing'] || 0) + parseFloat(data['Mortgage Principal']);
             }
             // Prepare Sankey data
             const sankeyData = [['Income', 'Category', 'Amount']];
@@ -115,7 +127,6 @@
                     sankeyData.push(['Income', cat, categoryTotals[cat]]);
                 }
             }
-            // Draw chart
             google.charts.setOnLoadCallback(() => drawSankey(sankeyData));
         });
     }
