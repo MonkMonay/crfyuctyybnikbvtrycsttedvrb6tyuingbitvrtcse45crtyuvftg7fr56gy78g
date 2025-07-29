@@ -402,7 +402,7 @@
         
         // Create the chart
         const width = chartContainer.clientWidth - 40; // Account for padding
-        const height = 560; // Account for padding
+        const height = chartContainer.clientHeight - 40; // Use container height instead of fixed height
         
         const svg = d3.select("#sankey_chart")
             .append("svg")
@@ -412,7 +412,7 @@
         const sankey = d3.sankey()
             .nodeWidth(20)
             .nodePadding(40)
-            .extent([[1, 1], [width - 1, height - 6]]);
+            .extent([[1, 1], [width - 1, height - 1]]);
         
         try {
             console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
