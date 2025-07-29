@@ -251,10 +251,15 @@
             const categoryTotals = {};
             const subcategoryTotals = {};
             
+            // Define savings items
+            const savingsItems = ['Emergency Fund', 'Retirement Savings', 'Investment Accounts', 'College Savings'];
+            
             for (const category of spendingCategories) {
                 if (category.title === 'Income') continue;
                 
                 let categoryTotal = 0;
+                let savingsTotal = 0;
+                
                 for (const item of category.items) {
                     const value = data[item.label];
                     // Skip Mortgage Principal as it's handled separately
@@ -262,8 +267,15 @@
                     
                     if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                         const numValue = parseFloat(value);
-                        categoryTotal += numValue;
-                        subcategoryTotals[item.label] = numValue;
+                        
+                        // Check if this is a savings item
+                        if (savingsItems.includes(item.label)) {
+                            savingsTotal += numValue;
+                            subcategoryTotals[item.label] = numValue;
+                        } else {
+                            categoryTotal += numValue;
+                            subcategoryTotals[item.label] = numValue;
+                        }
                     }
                 }
                 
@@ -279,6 +291,15 @@
                 if (categoryTotal > 0) {
                     categoryTotals[category.title] = categoryTotal;
                 }
+            }
+            
+            // Add savings as a separate category
+            const totalSavings = savingsItems.reduce((total, item) => {
+                return total + (parseFloat(data[item]) || 0);
+            }, 0);
+            
+            if (totalSavings > 0) {
+                categoryTotals['Savings'] = totalSavings;
             }
             
             console.log('Income sources:', incomeSources);
