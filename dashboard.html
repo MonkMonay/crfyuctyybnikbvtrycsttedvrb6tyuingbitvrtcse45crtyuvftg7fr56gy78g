@@ -452,12 +452,45 @@
                 .attr("width", d => d.x1 - d.x0)
                 .attr("fill", d => color(d.name));
             
+            // Add node labels
             node.append("text")
                 .attr("x", d => d.x0 - 6)
-                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("y", d => (d.y1 + d.y0) / 2 - 8)
                 .attr("dy", "0.35em")
                 .attr("text-anchor", "end")
                 .text(d => d.name)
+                .filter(d => d.x0 < width / 2)
+                .attr("x", d => d.x1 + 6)
+                .attr("text-anchor", "start");
+            
+            // Add amount labels under the node names
+            node.append("text")
+                .attr("x", d => d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2 + 8)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "end")
+                .attr("font-size", "10px")
+                .attr("fill", "#ccc")
+                .text(d => {
+                    // Calculate the total value for this node
+                    let totalValue = 0;
+                    
+                    // For income sources, use the original amount
+                    if (incomeSources.some(source => source.name === d.name)) {
+                        const source = incomeSources.find(source => source.name === d.name);
+                        totalValue = source ? source.amount : 0;
+                    }
+                    // For categories, use the category total
+                    else if (categoryTotals[d.name]) {
+                        totalValue = categoryTotals[d.name] * 12;
+                    }
+                    // For budget node, use total income
+                    else if (d.name === "Budget") {
+                        totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+                    }
+                    
+                    return totalValue > 0 ? `$${totalValue.toLocaleString()}` : '';
+                })
                 .filter(d => d.x0 < width / 2)
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start");
