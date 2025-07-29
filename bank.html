@@ -560,137 +560,122 @@
 
     // Display summary
     function displaySummary() {
-        let incomeHtml = '';
-        let spendingHtml = '';
         let totalIncome = 0;
         let totalSpending = 0;
-
-        // Display Income
-        incomeHtml += `<div class="summary-title">Income Summary</div>`;
+        
+        // Calculate totals
         for (const category of spendingCategories) {
             if (category.title === 'Income') {
-                for (const item of category.items) {
-                    const value = userResponses[item.label];
-                    if (value && value !== 'skipped') {
-                        if (item.label === 'Total Annual Income') {
-                            const numValue = parseFloat(value) || 0;
-                            totalIncome = numValue;
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
-                            </div>`;
-                        } else if (item.label === 'Total Monthly Income') {
-                            const numValue = parseFloat(value) || 0;
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
-                            </div>`;
-                        } else if (Array.isArray(value)) {
-                            // For multiselect items
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">${value.join(', ')}</div>
-                            </div>`;
-                        } else if (typeof value === 'string' && (value === 'yes' || value === 'no')) {
-                            // For yes/no items
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">${value === 'yes' ? 'Yes' : 'No'}</div>
-                            </div>`;
-                        } else if (typeof value === 'string') {
-                            // For select items
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">${value}</div>
-                            </div>`;
-                        } else {
-                            const numValue = parseFloat(value) || 0;
-                            incomeHtml += `<div class="expense-item">
-                                <div class="expense-label">${item.label}</div>
-                                <div class="expense-amount">$${numValue.toFixed(2)}</div>
-                            </div>`;
-                        }
-                    } else if (value === 'skipped') {
-                        incomeHtml += `<div class="expense-item">
-                            <div class="expense-label">${item.label}</div>
-                            <div class="expense-amount skipped">Skipped</div>
-                        </div>`;
-                    }
+                const monthlyIncome = parseFloat(userResponses['Total Monthly Income']) || 0;
+                const irregularIncome = parseFloat(userResponses['Annual Irregular Income']) || 0;
+                totalIncome = (monthlyIncome * 12) + irregularIncome;
+                continue;
+            }
+            
+            for (const item of category.items) {
+                const value = userResponses[item.label];
+                if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
+                    totalSpending += parseFloat(value);
                 }
-                break;
+            }
+            
+            // Handle special case for mortgage principal
+            if (category.title === 'Housing') {
+                const mortgagePrincipal = parseFloat(userResponses['Mortgage Principal']) || 0;
+                if (mortgagePrincipal > 0) {
+                    totalSpending += mortgagePrincipal;
+                }
             }
         }
-
-        // Display Spending
-        spendingHtml += `<div class="summary-title">Spending Summary</div>`;
+        
+        // Category colors
+        const categoryColors = {
+            'Income': '#4caf50',
+            'Housing': '#2196f3',
+            'Transportation': '#ff9800',
+            'Food & Dining': '#e91e63',
+            'Personal & Health': '#9c27b0',
+            'Entertainment & Lifestyle': '#00bcd4',
+            'Financial Obligations': '#ff5722',
+            'Other': '#607d8b'
+        };
+        
+        let html = '<div style="text-align: center; margin-bottom: 20px;">';
+        html += `<div style="font-size: 24px; color: #4caf50; margin-bottom: 10px;">Total Annual Income: $${totalIncome.toLocaleString()}</div>`;
+        html += '</div>';
+        
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
+        
+        // Process each category
         for (const category of spendingCategories) {
-            if (category.title !== 'Income') {
-                spendingHtml += `<div class="category-section">
-                    <div class="category-title">${category.title}</div>`;
-                
-                for (const item of category.items) {
-                    const value = userResponses[item.label];
-                    if (item.label === 'Mortgage Interest Rate & Principal') {
-                        const interest = userResponses['Mortgage Interest Rate'];
-                        const principal = userResponses['Mortgage Principal'];
-                        if ((interest && interest !== 'skipped') || (principal && principal !== 'skipped')) {
-                            spendingHtml += `<div class="expense-item">
-                                <div class="expense-label">Mortgage Interest Rate</div>
-                                <div class="expense-amount">${interest ? interest + '%' : 'N/A'}</div>
-                            </div>`;
-                            spendingHtml += `<div class="expense-item">
-                                <div class="expense-label">Mortgage Principal</div>
-                                <div class="expense-amount">${principal ? '$' + parseFloat(principal).toLocaleString() : 'N/A'}</div>
-                            </div>`;
-                        } else if (interest === 'skipped' && principal === 'skipped') {
-                            spendingHtml += `<div class="expense-item">
-                                <div class="expense-label">Mortgage Interest Rate & Principal</div>
-                                <div class="expense-amount skipped">Skipped</div>
-                            </div>`;
-                        }
-                        continue;
-                    }
-                    if (value && value !== 'skipped') {
-                        const numValue = parseFloat(value) || 0;
-                        totalSpending += numValue;
-                        spendingHtml += `<div class="expense-item">
-                            <div class="expense-label">${item.label}</div>
-                            <div class="expense-amount">$${numValue.toFixed(2)}</div>
-                        </div>`;
-                    } else if (value === 'skipped') {
-                        spendingHtml += `<div class="expense-item">
-                            <div class="expense-label">${item.label}</div>
-                            <div class="expense-amount skipped">Skipped</div>
-                        </div>`;
-                    }
+            if (category.title === 'Income') continue;
+            
+            let categoryTotal = 0;
+            const categoryItems = [];
+            
+            for (const item of category.items) {
+                const value = userResponses[item.label];
+                if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
+                    const numValue = parseFloat(value);
+                    categoryTotal += numValue;
+                    categoryItems.push({
+                        name: item.label,
+                        value: numValue
+                    });
                 }
+            }
+            
+            // Handle special case for mortgage principal
+            if (category.title === 'Housing') {
+                const mortgagePrincipal = parseFloat(userResponses['Mortgage Principal']) || 0;
+                if (mortgagePrincipal > 0) {
+                    categoryTotal += mortgagePrincipal;
+                    categoryItems.push({
+                        name: 'Mortgage Principal',
+                        value: mortgagePrincipal
+                    });
+                }
+            }
+            
+            if (categoryTotal > 0) {
+                const percentage = ((categoryTotal * 12) / totalIncome * 100).toFixed(1);
+                const color = categoryColors[category.title] || '#666';
                 
-                spendingHtml += `</div>`;
+                html += `<div style="background: #333; border-radius: 10px; padding: 15px; border-left: 4px solid ${color};">`;
+                html += `<div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category.title}</div>`;
+                html += `<div style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Annual: $${(categoryTotal * 12).toLocaleString()} (${percentage}%)</div>`;
+                
+                // Add subcategories
+                html += '<div style="font-size: 12px; color: #999;">';
+                for (const item of categoryItems) {
+                    const subPercentage = ((item.value * 12) / totalIncome * 100).toFixed(1);
+                    html += `<div style="margin: 5px 0; padding: 5px; background: #444; border-radius: 5px;">`;
+                    html += `<span style="color: #ccc;">${item.name}</span>`;
+                    html += `<span style="float: right; color: ${color};">$${(item.value * 12).toLocaleString()} (${subPercentage}%)</span>`;
+                    html += '</div>';
+                }
+                html += '</div>';
+                html += '</div>';
             }
         }
-
-        // Create two-column layout
-        const summaryLayout = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                <div class="summary-column">
-                    ${incomeHtml}
-                </div>
-                <div class="summary-column">
-                    ${spendingHtml}
-                </div>
-            </div>
-            <div class="total-section" style="margin-top: 30px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="total-text">Annual Income: $${totalIncome.toFixed(2)}</div>
-                    <div class="total-text">Annual Spending: $${(totalSpending * 12).toFixed(2)}</div>
-                </div>
-                <div class="total-text" style="margin-top: 15px; font-size: 24px; color: ${totalIncome > (totalSpending * 12) ? '#4caf50' : '#ff5252'};">
-                    ${totalIncome > (totalSpending * 12) ? 'Surplus' : 'Deficit'}: $${Math.abs(totalIncome - (totalSpending * 12)).toFixed(2)}
-                </div>
-            </div>
-        `;
-
-        summaryContent.innerHTML = summaryLayout;
+        
+        html += '</div>';
+        
+        // Add summary section
+        html += '<div style="margin-top: 30px; padding: 20px; background: #333; border-radius: 10px;">';
+        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">';
+        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #4caf50;">Annual Income</div><div style="font-size: 24px; color: #4caf50; font-weight: bold;">$${totalIncome.toLocaleString()}</div></div>`;
+        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #ff5252;">Annual Spending</div><div style="font-size: 24px; color: #ff5252; font-weight: bold;">$${(totalSpending * 12).toLocaleString()}</div></div>`;
+        html += '</div>';
+        
+        const surplus = totalIncome - (totalSpending * 12);
+        const surplusColor = surplus >= 0 ? '#4caf50' : '#ff5252';
+        const surplusText = surplus >= 0 ? 'Surplus' : 'Deficit';
+        
+        html += `<div style="text-align: center; font-size: 24px; color: ${surplusColor}; font-weight: bold;">${surplusText}: $${Math.abs(surplus).toLocaleString()}</div>`;
+        html += '</div>';
+        
+        summaryContent.innerHTML = html;
     }
 
     // Edit button click
