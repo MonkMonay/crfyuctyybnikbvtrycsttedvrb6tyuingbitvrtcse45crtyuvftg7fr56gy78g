@@ -473,9 +473,40 @@
         
         try {
             console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
+            
+            // Create clean copies of nodes and links for D3
+            const cleanNodes = nodes.map(d => ({ name: d.name }));
+            const cleanLinks = validLinks.map(d => ({
+                source: d.source,
+                target: d.target,
+                value: d.value
+            }));
+            
+            console.log('Clean nodes:', cleanNodes.map(n => n.name));
+            console.log('Clean links:', cleanLinks.map(l => `${l.source} → ${l.target}`));
+            
+            // Final validation - ensure all link sources and targets exist in nodes
+            const nodeNames = new Set(cleanNodes.map(n => n.name));
+            const finalLinks = cleanLinks.filter(link => {
+                const sourceExists = nodeNames.has(link.source);
+                const targetExists = nodeNames.has(link.target);
+                if (!sourceExists || !targetExists) {
+                    console.warn(`Removing invalid link: ${link.source} → ${link.target}`);
+                    return false;
+                }
+                return true;
+            });
+            
+            console.log('Final valid links:', finalLinks.length);
+            
+            if (finalLinks.length === 0) {
+                chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No valid connections found after validation.</div>';
+                return;
+            }
+            
             const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
-                nodes: nodes.map(d => Object.assign({}, d)),
-                links: validLinks.map(d => Object.assign({}, d))
+                nodes: cleanNodes,
+                links: finalLinks
             });
             
             const color = d3.scaleOrdinal()
