@@ -188,8 +188,9 @@
             const data = doc.data();
             console.log('Loaded data:', data);
             
-            // Calculate category totals
+            // Calculate category totals and subcategory totals
             const categoryTotals = {};
+            const subcategoryTotals = {};
             let totalIncome = 0;
             
             // Process each category
@@ -207,7 +208,9 @@
                 for (const item of category.items) {
                     const value = data[item.label];
                     if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
-                        categoryTotal += parseFloat(value);
+                        const numValue = parseFloat(value);
+                        categoryTotal += numValue;
+                        subcategoryTotals[item.label] = numValue;
                     }
                 }
                 
@@ -215,6 +218,9 @@
                 if (category.title === 'Housing') {
                     const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
                     categoryTotal += mortgagePrincipal;
+                    if (mortgagePrincipal > 0) {
+                        subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
+                    }
                 }
                 
                 if (categoryTotal > 0) {
@@ -223,14 +229,29 @@
             }
             
             console.log('Category totals:', categoryTotals);
+            console.log('Subcategory totals:', subcategoryTotals);
             console.log('Total income:', totalIncome);
             
-            // Prepare Sankey data
+            // Prepare Sankey data with hierarchical structure
             const sankeyData = [['From', 'To', 'Amount']];
             
-            // Add income flows
+            // Add income flows to main categories
             for (const category in categoryTotals) {
                 sankeyData.push(['Income', category, categoryTotals[category]]);
+            }
+            
+            // Add subcategory flows from their parent categories
+            for (const subcategory in subcategoryTotals) {
+                // Find which category this subcategory belongs to
+                for (const category of spendingCategories) {
+                    if (category.title === 'Income') continue;
+                    
+                    const found = category.items.find(item => item.label === subcategory);
+                    if (found) {
+                        sankeyData.push([category.title, subcategory, subcategoryTotals[subcategory]]);
+                        break;
+                    }
+                }
             }
             
             console.log('Sankey data:', sankeyData);
@@ -255,11 +276,12 @@
                 node: { 
                     label: { 
                         fontName: 'Montserrat', 
-                        fontSize: 16, 
+                        fontSize: 14, 
                         color: '#fff', 
                         bold: true 
                     }, 
-                    color: { fill: '#222' } 
+                    color: { fill: '#222' },
+                    nodePadding: 20
                 },
                 link: { 
                     color: { 
