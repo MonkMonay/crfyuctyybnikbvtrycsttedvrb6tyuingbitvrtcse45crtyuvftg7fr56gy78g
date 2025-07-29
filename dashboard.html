@@ -436,11 +436,9 @@
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(1, d.width))
                     .on("mouseover", function(event, d) {
-                        // Show detailed breakdown for this link
                         showDetailedBreakdown(d, event);
                     })
                     .on("mouseout", function(event, d) {
-                        // Hide detailed breakdown
                         hideDetailedBreakdown();
                     })
                     .append("title")
@@ -506,7 +504,9 @@
             // Function to show detailed breakdown
             function showDetailedBreakdown(linkData, event) {
                 const targetCategory = linkData.target.name;
-                const categoryTotal = categoryTotals[targetCategory] * 12;
+                
+                // Only expand for category links (from Budget to categories)
+                if (linkData.source.name !== "Budget") return;
                 
                 // Find all subcategories for this category
                 const subcategories = [];
@@ -551,40 +551,138 @@
                 }
                 
                 if (subcategories.length > 0) {
-                    // Create detailed breakdown tooltip
-                    const tooltip = d3.select("body").append("div")
-                        .attr("class", "sankey-tooltip")
-                        .style("position", "absolute")
-                        .style("background", "rgba(0, 0, 0, 0.9)")
-                        .style("color", "white")
-                        .style("padding", "10px")
-                        .style("border-radius", "5px")
-                        .style("font-family", "Montserrat, Arial, sans-serif")
-                        .style("font-size", "12px")
-                        .style("pointer-events", "none")
-                        .style("z-index", "1000");
+                    // Create expanded nodes and links for subcategories
+                    const expandedNodes = [...sankeyNodes];
+                    const expandedLinks = [...sankeyLinks];
                     
-                    tooltip.append("div")
-                        .style("font-weight", "bold")
-                        .style("margin-bottom", "5px")
-                        .text(`${targetCategory} Breakdown`);
-                    
+                    // Add subcategory nodes
                     subcategories.forEach(sub => {
-                        const percentage = ((sub.amount / categoryTotal) * 100).toFixed(1);
-                        tooltip.append("div")
-                            .style("margin", "2px 0")
-                            .text(`${sub.name}: $${sub.amount.toLocaleString()} (${percentage}%)`);
+                        expandedNodes.push({ name: sub.name });
                     });
                     
-                    // Position tooltip near mouse
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                           .style("top", (event.pageY - 10) + "px");
+                    // Remove the original category link
+                    const categoryLinkIndex = expandedLinks.findIndex(link => 
+                        link.source.name === "Budget" && link.target.name === targetCategory
+                    );
+                    if (categoryLinkIndex !== -1) {
+                        expandedLinks.splice(categoryLinkIndex, 1);
+                    }
+                    
+                    // Add links from Budget to subcategories
+                    subcategories.forEach(sub => {
+                        expandedLinks.push({
+                            source: expandedNodes.find(n => n.name === "Budget"),
+                            target: expandedNodes.find(n => n.name === sub.name),
+                            value: sub.amount
+                        });
+                    });
+                    
+                    // Recalculate Sankey layout with expanded data
+                    const expandedSankey = d3.sankey()
+                        .nodeWidth(20)
+                        .nodePadding(40)
+                        .extent([[1, 1], [width - 1, height - 1]]);
+                    
+                    const {nodes: newNodes, links: newLinks} = expandedSankey({
+                        nodes: expandedNodes,
+                        links: expandedLinks
+                    });
+                    
+                    // Update the visualization
+                    updateSankeyVisualization(newNodes, newLinks, color);
                 }
             }
             
             // Function to hide detailed breakdown
             function hideDetailedBreakdown() {
-                d3.selectAll(".sankey-tooltip").remove();
+                // Revert to original Sankey layout
+                const {nodes: originalNodes, links: originalLinks} = sankey({
+                    nodes: nodes,
+                    links: validLinks
+                });
+                
+                updateSankeyVisualization(originalNodes, originalLinks, color);
+            }
+            
+            // Function to update the Sankey visualization
+            function updateSankeyVisualization(sankeyNodes, sankeyLinks, colorScale) {
+                // Clear existing visualization
+                svg.selectAll("*").remove();
+                
+                // Recreate links
+                svg.append("g")
+                    .selectAll("path")
+                    .data(sankeyLinks)
+                    .join("path")
+                        .attr("class", "link")
+                        .attr("d", d3.sankeyLinkHorizontal())
+                        .attr("stroke", d => colorScale(d.source.name))
+                        .attr("stroke-width", d => Math.max(1, d.width))
+                        .on("mouseover", function(event, d) {
+                            showDetailedBreakdown(d, event);
+                        })
+                        .on("mouseout", function(event, d) {
+                            hideDetailedBreakdown();
+                        })
+                        .append("title")
+                        .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+                
+                // Recreate nodes
+                const node = svg.append("g")
+                    .selectAll("g")
+                    .data(sankeyNodes)
+                    .join("g")
+                        .attr("class", "node");
+                
+                node.append("rect")
+                    .attr("x", d => d.x0)
+                    .attr("y", d => d.y0)
+                    .attr("height", d => d.y1 - d.y0)
+                    .attr("width", d => d.x1 - d.x0)
+                    .attr("fill", d => colorScale(d.name));
+                
+                // Add node labels
+                node.append("text")
+                    .attr("x", d => d.x0 - 6)
+                    .attr("y", d => (d.y1 + d.y0) / 2 - 8)
+                    .attr("dy", "0.35em")
+                    .attr("text-anchor", "end")
+                    .text(d => d.name)
+                    .filter(d => d.x0 < width / 2)
+                    .attr("x", d => d.x1 + 6)
+                    .attr("text-anchor", "start");
+                
+                // Add amount labels under the node names
+                node.append("text")
+                    .attr("x", d => d.x0 - 6)
+                    .attr("y", d => (d.y1 + d.y0) / 2 + 8)
+                    .attr("dy", "0.35em")
+                    .attr("text-anchor", "end")
+                    .attr("font-size", "10px")
+                    .attr("fill", "#ccc")
+                    .text(d => {
+                        let totalValue = 0;
+                        
+                        if (incomeSources.some(source => source.name === d.name)) {
+                            const source = incomeSources.find(source => source.name === d.name);
+                            totalValue = source ? source.amount : 0;
+                        } else if (categoryTotals[d.name]) {
+                            totalValue = categoryTotals[d.name] * 12;
+                        } else if (d.name === "Budget") {
+                            totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+                        } else {
+                            // For subcategories, find their value
+                            const subcategoryValue = subcategoryTotals[d.name];
+                            if (subcategoryValue) {
+                                totalValue = subcategoryValue * 12;
+                            }
+                        }
+                        
+                        return totalValue > 0 ? `$${totalValue.toLocaleString()}` : '';
+                    })
+                    .filter(d => d.x0 < width / 2)
+                    .attr("x", d => d.x1 + 6)
+                    .attr("text-anchor", "start");
             }
                 
         } catch (error) {
