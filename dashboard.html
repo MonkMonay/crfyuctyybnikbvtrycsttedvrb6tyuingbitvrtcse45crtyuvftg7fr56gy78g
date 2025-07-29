@@ -560,18 +560,10 @@
                         expandedNodes.push({ name: sub.name });
                     });
                     
-                    // Remove the original category link
-                    const categoryLinkIndex = expandedLinks.findIndex(link => 
-                        link.source.name === "Budget" && link.target.name === targetCategory
-                    );
-                    if (categoryLinkIndex !== -1) {
-                        expandedLinks.splice(categoryLinkIndex, 1);
-                    }
-                    
-                    // Add links from Budget to subcategories
+                    // Add links from the category to its subcategories
                     subcategories.forEach(sub => {
                         expandedLinks.push({
-                            source: expandedNodes.find(n => n.name === "Budget"),
+                            source: expandedNodes.find(n => n.name === targetCategory),
                             target: expandedNodes.find(n => n.name === sub.name),
                             value: sub.amount
                         });
