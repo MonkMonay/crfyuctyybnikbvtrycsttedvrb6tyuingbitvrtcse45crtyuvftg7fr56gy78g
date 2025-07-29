@@ -271,22 +271,36 @@
     function drawSankey(sankeyData) {
         const data = google.visualization.arrayToDataTable(sankeyData);
         const chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+        
+        // Define colors for different categories
+        const categoryColors = {
+            'Income': '#4caf50',
+            'Housing': '#2196f3',
+            'Transportation': '#ff9800',
+            'Food & Dining': '#e91e63',
+            'Personal & Health': '#9c27b0',
+            'Entertainment & Lifestyle': '#00bcd4',
+            'Financial Obligations': '#ff5722',
+            'Other': '#607d8b'
+        };
+        
         chart.draw(data, {
             sankey: {
                 node: { 
                     label: { 
                         fontName: 'Montserrat', 
-                        fontSize: 14, 
+                        fontSize: 12, 
                         color: '#fff', 
                         bold: true 
                     }, 
                     color: { fill: '#222' },
-                    nodePadding: 20
+                    nodePadding: 10,
+                    width: 20
                 },
                 link: { 
                     color: { 
                         fill: '#FFD700', 
-                        fillOpacity: 0.7 
+                        fillOpacity: 0.6 
                     } 
                 }
             },
