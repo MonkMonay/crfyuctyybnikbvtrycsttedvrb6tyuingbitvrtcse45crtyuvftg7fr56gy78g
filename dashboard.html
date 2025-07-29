@@ -50,9 +50,31 @@
             <h1>Welcome to your Dashboard</h1>
             <div class="welcome-text" id="welcome"></div>
         </div>
-        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
-        <div id="expense_chart" style="width:100%;max-width:900px;margin:0 auto;background:#222;border-radius:16px;padding:20px;min-height:400px;"></div>
+        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Financial Flow</h2>
+        <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
     </div>
+    <!-- D3.js and D3 Sankey -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <style>
+        .node rect {
+            stroke: #333;
+            cursor: pointer;
+        }
+        .node text {
+            pointer-events: none;
+            font-size: 12px;
+            font-family: 'Montserrat', Arial, sans-serif;
+            fill: #fff;
+        }
+        .link {
+            fill: none;
+            stroke-opacity: 0.6;
+        }
+        .link:hover {
+            stroke-opacity: 0.9;
+        }
+    </style>
     <script>
     // Initialize Firebase
     const firebaseConfig = {
@@ -164,23 +186,11 @@
         ]}
     ];
 
-    // Category colors
-    const categoryColors = {
-        'Income': '#4caf50',
-        'Housing': '#2196f3',
-        'Transportation': '#ff9800',
-        'Food & Dining': '#e91e63',
-        'Personal & Health': '#9c27b0',
-        'Entertainment & Lifestyle': '#00bcd4',
-        'Financial Obligations': '#ff5722',
-        'Other': '#607d8b'
-    };
-
     auth.onAuthStateChanged(function(user) {
         if (user) {
             welcome.textContent = `You're logged in as: ${user.email}`;
             userEmail.textContent = user.email;
-            loadExpenseData(user.uid);
+            loadSankeyData(user.uid);
         } else {
             window.location.href = 'login.html';
         }
@@ -189,35 +199,67 @@
         auth.signOut();
     };
 
-    function loadExpenseData(uid) {
+    function loadSankeyData(uid) {
         db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
             if (!doc.exists) {
                 console.log('No spending data found');
-                document.getElementById('expense_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
                 return;
             }
             const data = doc.data();
             console.log('Loaded data:', data);
             
+            // Calculate income sources
+            const incomeSources = [];
+            const primaryIncome = parseFloat(data['Primary Monthly Income']) || 0;
+            const additionalIncome = parseFloat(data['Additional Monthly Income']) || 0;
+            
+            if (primaryIncome > 0) {
+                incomeSources.push({
+                    name: data['Primary Income Source'] || 'Primary Income',
+                    amount: primaryIncome * 12
+                });
+            }
+            
+            if (additionalIncome > 0) {
+                incomeSources.push({
+                    name: 'Additional Income',
+                    amount: additionalIncome * 12
+                });
+            }
+            
+            const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
+            if (irregularIncome > 0) {
+                incomeSources.push({
+                    name: 'Irregular Income',
+                    amount: irregularIncome
+                });
+            }
+            
+            // If no income sources found, use total income
+            if (incomeSources.length === 0) {
+                const totalMonthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
+                if (totalMonthlyIncome > 0) {
+                    incomeSources.push({
+                        name: 'Total Income',
+                        amount: totalMonthlyIncome * 12
+                    });
+                }
+            }
+            
             // Calculate category totals and subcategory totals
             const categoryTotals = {};
             const subcategoryTotals = {};
-            let totalIncome = 0;
             
-            // Process each category
             for (const category of spendingCategories) {
-                if (category.title === 'Income') {
-                    // Handle income separately
-                    const monthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
-                    const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
-                    totalIncome = (monthlyIncome * 12) + irregularIncome;
-                    continue;
-                }
+                if (category.title === 'Income') continue;
                 
-                // Calculate total for each spending category
                 let categoryTotal = 0;
                 for (const item of category.items) {
                     const value = data[item.label];
+                    // Skip Mortgage Principal as it's handled separately
+                    if (item.label === 'Mortgage Principal') continue;
+                    
                     if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                         const numValue = parseFloat(value);
                         categoryTotal += numValue;
@@ -228,8 +270,8 @@
                 // Handle special case for mortgage principal
                 if (category.title === 'Housing') {
                     const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
-                    categoryTotal += mortgagePrincipal;
                     if (mortgagePrincipal > 0) {
+                        categoryTotal += mortgagePrincipal;
                         subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
                     }
                 }
@@ -239,66 +281,159 @@
                 }
             }
             
+            console.log('Income sources:', incomeSources);
             console.log('Category totals:', categoryTotals);
             console.log('Subcategory totals:', subcategoryTotals);
-            console.log('Total income:', totalIncome);
             
-            createExpenseChart(categoryTotals, subcategoryTotals, totalIncome);
+            if (incomeSources.length === 0) {
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No income data found. Please complete the income section of the bank questionnaire.</div>';
+                return;
+            }
+            
+            if (Object.keys(categoryTotals).length === 0) {
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data found. Please complete the spending section of the bank questionnaire.</div>';
+                return;
+            }
+            
+            createSankeyChart(incomeSources, categoryTotals, subcategoryTotals);
         }).catch(error => {
             console.error('Error loading data:', error);
-            document.getElementById('expense_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
+            document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
         });
     }
 
-    function createExpenseChart(categoryTotals, subcategoryTotals, totalIncome) {
-        const chartContainer = document.getElementById('expense_chart');
+    function createSankeyChart(incomeSources, categoryTotals, subcategoryTotals) {
+        const chartContainer = document.getElementById('sankey_chart');
         
-        if (Object.keys(categoryTotals).length === 0) {
-            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
-            return;
-        }
-
-        let html = '<div style="text-align: center; margin-bottom: 20px;">';
-        html += `<div style="font-size: 24px; color: #4caf50; margin-bottom: 10px;">Total Annual Income: $${totalIncome.toLocaleString()}</div>`;
-        html += '</div>';
+        // Clear previous chart
+        chartContainer.innerHTML = '';
         
-        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
+        // Prepare data for D3 Sankey
+        const nodes = [];
+        const links = [];
         
-        for (const category in categoryTotals) {
-            const categoryTotal = categoryTotals[category];
-            const percentage = ((categoryTotal * 12) / totalIncome * 100).toFixed(1);
-            const color = categoryColors[category] || '#666';
-            
-            html += `<div style="background: #333; border-radius: 10px; padding: 15px; border-left: 4px solid ${color};">`;
-            html += `<div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category}</div>`;
-            html += `<div style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Annual: $${(categoryTotal * 12).toLocaleString()} (${percentage}%)</div>`;
-            
-            // Add subcategories
-            html += '<div style="font-size: 12px; color: #999;">';
-            for (const subcategory in subcategoryTotals) {
-                // Find which category this subcategory belongs to
-                for (const cat of spendingCategories) {
-                    if (cat.title === category) {
-                        const found = cat.items.find(item => item.label === subcategory);
-                        if (found) {
-                            const subValue = subcategoryTotals[subcategory];
-                            const subPercentage = ((subValue * 12) / totalIncome * 100).toFixed(1);
-                            html += `<div style="margin: 5px 0; padding: 5px; background: #444; border-radius: 5px;">`;
-                            html += `<span style="color: #ccc;">${subcategory}</span>`;
-                            html += `<span style="float: right; color: ${color};">$${(subValue * 12).toLocaleString()} (${subPercentage}%)</span>`;
-                            html += '</div>';
-                        }
-                        break;
-                    }
+        // Add income source nodes
+        incomeSources.forEach(source => {
+            nodes.push({ name: source.name });
+        });
+        
+        // Add budget node
+        nodes.push({ name: "Budget" });
+        
+        // Add category nodes
+        Object.keys(categoryTotals).forEach(category => {
+            nodes.push({ name: category });
+        });
+        
+        // Add subcategory nodes
+        Object.keys(subcategoryTotals).forEach(subcategory => {
+            nodes.push({ name: subcategory });
+        });
+        
+        // Create links from income sources to budget
+        const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+        incomeSources.forEach(source => {
+            links.push({
+                source: source.name,
+                target: "Budget",
+                value: source.amount
+            });
+        });
+        
+        // Create links from budget to categories
+        Object.keys(categoryTotals).forEach(category => {
+            links.push({
+                source: "Budget",
+                target: category,
+                value: categoryTotals[category] * 12
+            });
+        });
+        
+        // Create links from categories to subcategories
+        Object.keys(subcategoryTotals).forEach(subcategory => {
+            // Find which category this subcategory belongs to
+            for (const category of spendingCategories) {
+                if (category.title === 'Income') continue;
+                
+                const found = category.items.find(item => item.label === subcategory);
+                if (found) {
+                    links.push({
+                        source: category.title,
+                        target: subcategory,
+                        value: subcategoryTotals[subcategory] * 12
+                    });
+                    break;
                 }
             }
-            html += '</div>';
-            html += '</div>';
+        });
+        
+        console.log('Sankey nodes:', nodes.length);
+        console.log('Sankey links:', links.length);
+        
+        // Create the chart
+        const width = chartContainer.clientWidth - 40; // Account for padding
+        const height = 560; // Account for padding
+        
+        const svg = d3.select("#sankey_chart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        
+        const sankey = d3.sankey()
+            .nodeWidth(20)
+            .nodePadding(10)
+            .extent([[1, 1], [width - 1, height - 6]]);
+        
+        try {
+            const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
+                nodes: nodes.map(d => Object.assign({}, d)),
+                links: links.map(d => Object.assign({}, d))
+            });
+            
+            const color = d3.scaleOrdinal()
+                .domain(nodes.map(d => d.name))
+                .range(d3.schemeCategory10);
+            
+            // Create links
+            svg.append("g")
+                .selectAll("path")
+                .data(sankeyLinks)
+                .join("path")
+                    .attr("class", "link")
+                    .attr("d", d3.sankeyLinkHorizontal())
+                    .attr("stroke", d => color(d.source.name))
+                    .attr("stroke-width", d => Math.max(1, d.width))
+                    .append("title")
+                    .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+            
+            // Create nodes
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(sankeyNodes)
+                .join("g")
+                    .attr("class", "node");
+            
+            node.append("rect")
+                .attr("x", d => d.x0)
+                .attr("y", d => d.y0)
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", d => d.x1 - d.x0)
+                .attr("fill", d => color(d.name));
+            
+            node.append("text")
+                .attr("x", d => d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "end")
+                .text(d => d.name)
+                .filter(d => d.x0 < width / 2)
+                .attr("x", d => d.x1 + 6)
+                .attr("text-anchor", "start");
+                
+        } catch (error) {
+            console.error('Error creating Sankey chart:', error);
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error creating chart. Please check the console for details.</div>';
         }
-        
-        html += '</div>';
-        
-        chartContainer.innerHTML = html;
     }
 </script>
 </body>
