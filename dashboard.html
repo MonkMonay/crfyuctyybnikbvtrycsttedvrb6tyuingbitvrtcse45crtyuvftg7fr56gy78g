@@ -363,7 +363,10 @@
         });
         
         // Create links from budget to categories
-        Object.keys(categoryTotals).forEach(category => {
+        Object.keys(categoryTotals).forEach((category, index) => {
+            // Skip the 4th category (Financial Obligations) from main display
+            if (index === 3) return; // Skip 4th category
+            
             if (nodeNames.has("Budget") && nodeNames.has(category)) {
                 links.push({
                     source: nodeNameToIndex["Budget"],
@@ -381,6 +384,9 @@
                 
                 const found = category.items.find(item => item.label === subcategory);
                 if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
+                    // Skip subcategories of the 4th category (Financial Obligations)
+                    if (category.title === 'Financial Obligations') continue;
+                    
                     links.push({
                         source: nodeNameToIndex[category.title],
                         target: nodeNameToIndex[subcategory],
@@ -484,6 +490,43 @@
                         .filter(link => link.source.name === nodeName || link.target.name === nodeName)
                         .classed("faded", false)
                         .classed("highlighted", true);
+                    
+                    // Show Financial Obligations category if hovering over Budget or other main categories
+                    if (nodeName === "Budget" || Object.keys(categoryTotals).includes(nodeName)) {
+                        // Find Financial Obligations category and its subcategories
+                        const financialObligationsCategory = Object.keys(categoryTotals).find((cat, index) => index === 3);
+                        if (financialObligationsCategory) {
+                            // Show Financial Obligations node
+                            svg.selectAll(".node")
+                                .filter(node => node.name === financialObligationsCategory)
+                                .style("opacity", 1);
+                            
+                            // Show connections to Financial Obligations
+                            svg.selectAll(".link")
+                                .filter(link => link.source.name === "Budget" && link.target.name === financialObligationsCategory)
+                                .classed("faded", false)
+                                .classed("highlighted", true);
+                            
+                            // Show Financial Obligations subcategories
+                            Object.keys(subcategoryTotals).forEach(subcategory => {
+                                for (const category of spendingCategories) {
+                                    if (category.title === 'Financial Obligations') {
+                                        const found = category.items.find(item => item.label === subcategory);
+                                        if (found) {
+                                            svg.selectAll(".node")
+                                                .filter(node => node.name === subcategory)
+                                                .style("opacity", 1);
+                                            
+                                            svg.selectAll(".link")
+                                                .filter(link => link.source.name === financialObligationsCategory && link.target.name === subcategory)
+                                                .classed("faded", false)
+                                                .classed("highlighted", true);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
                     
                     // Fade other nodes
                     svg.selectAll(".node rect")
