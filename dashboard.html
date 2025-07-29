@@ -437,7 +437,7 @@
                     .attr("stroke-width", d => Math.max(1, d.width))
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
-                        toggleDetailedBreakdown(d, event);
+                        toggleDetailedBreakdown(d, event, data);
                     })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
@@ -518,12 +518,12 @@
                     hideDetailedBreakdown();
                 } else {
                     // Expand to show subcategories
-                    showDetailedBreakdown(linkData, event);
+                    showDetailedBreakdown(linkData, event, data);
                 }
             }
             
             // Function to show detailed breakdown
-            function showDetailedBreakdown(linkData, event) {
+            function showDetailedBreakdown(linkData, event, firestoreData) {
                 const targetCategory = linkData.target.name;
                 
                 // Only expand for category links (from Budget to categories)
@@ -534,7 +534,7 @@
                 for (const category of spendingCategories) {
                     if (category.title === targetCategory) {
                         for (const item of category.items) {
-                            const value = parseFloat(data[item.label]) || 0;
+                            const value = parseFloat(firestoreData[item.label]) || 0;
                             if (value > 0 && item.label !== 'Mortgage Principal') {
                                 subcategories.push({
                                     name: item.label,
@@ -548,7 +548,7 @@
                 
                 // Handle special case for Housing with Mortgage Principal
                 if (targetCategory === 'Housing') {
-                    const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
+                    const mortgagePrincipal = parseFloat(firestoreData['Mortgage Principal']) || 0;
                     if (mortgagePrincipal > 0) {
                         subcategories.push({
                             name: 'Mortgage Principal',
@@ -561,7 +561,7 @@
                 if (targetCategory === 'Savings') {
                     const savingsItems = ['Emergency Fund', 'Retirement Savings', 'Investment Accounts', 'College Savings'];
                     savingsItems.forEach(item => {
-                        const value = parseFloat(data[item]) || 0;
+                        const value = parseFloat(firestoreData[item]) || 0;
                         if (value > 0) {
                             subcategories.push({
                                 name: item,
@@ -633,7 +633,7 @@
                         .attr("stroke-width", d => Math.max(1, d.width))
                         .on("click", function(event, d) {
                             // Toggle detailed breakdown for this link
-                            toggleDetailedBreakdown(d, event);
+                            toggleDetailedBreakdown(d, event, data);
                         })
                         .append("title")
                         .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
