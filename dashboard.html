@@ -335,13 +335,19 @@
             nodeNames.add(subcategory);
         });
         
+        // Create a mapping from node names to indices
+        const nodeNameToIndex = {};
+        nodes.forEach((node, index) => {
+            nodeNameToIndex[node.name] = index;
+        });
+        
         // Create links from income sources to budget
         const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
         incomeSources.forEach(source => {
             if (nodeNames.has(source.name) && nodeNames.has("Budget")) {
                 links.push({
-                    source: source.name,
-                    target: "Budget",
+                    source: nodeNameToIndex[source.name],
+                    target: nodeNameToIndex["Budget"],
                     value: source.amount
                 });
             }
@@ -351,8 +357,8 @@
         Object.keys(categoryTotals).forEach(category => {
             if (nodeNames.has("Budget") && nodeNames.has(category)) {
                 links.push({
-                    source: "Budget",
-                    target: category,
+                    source: nodeNameToIndex["Budget"],
+                    target: nodeNameToIndex[category],
                     value: categoryTotals[category] * 12
                 });
             }
@@ -367,8 +373,8 @@
                 const found = category.items.find(item => item.label === subcategory);
                 if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
                     links.push({
-                        source: category.title,
-                        target: subcategory,
+                        source: nodeNameToIndex[category.title],
+                        target: nodeNameToIndex[subcategory],
                         value: subcategoryTotals[subcategory] * 12
                     });
                     break;
@@ -377,15 +383,14 @@
         });
         
         console.log('Sankey nodes:', nodes.map(n => n.name));
-        console.log('Sankey links:', links.map(l => `${l.source} → ${l.target}`));
+        console.log('Sankey links:', links.map(l => `${nodes[l.source].name} → ${nodes[l.target].name}`));
         
         // Validate that all links reference existing nodes
-        const allNodeNames = new Set(nodes.map(n => n.name));
         const validLinks = links.filter(link => {
-            const sourceExists = allNodeNames.has(link.source);
-            const targetExists = allNodeNames.has(link.target);
+            const sourceExists = link.source >= 0 && link.source < nodes.length;
+            const targetExists = link.target >= 0 && link.target < nodes.length;
             if (!sourceExists || !targetExists) {
-                console.warn(`Removing invalid link: ${link.source} → ${link.target}`);
+                console.warn(`Removing invalid link: ${nodes[link.source]?.name || 'unknown'} → ${nodes[link.target]?.name || 'unknown'}`);
                 return false;
             }
             return true;
@@ -413,19 +418,11 @@
             .extent([[1, 1], [width - 1, height - 6]]);
         
         try {
-            // Create clean copies for D3
-            const cleanNodes = nodes.map(d => ({ name: d.name }));
-            const cleanLinks = validLinks.map(d => ({
-                source: d.source,
-                target: d.target,
-                value: d.value
-            }));
-            
-            console.log('About to create Sankey with nodes:', cleanNodes.length, 'and links:', cleanLinks.length);
+            console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
             
             const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
-                nodes: cleanNodes,
-                links: cleanLinks
+                nodes: nodes,
+                links: validLinks
             });
             
             const color = d3.scaleOrdinal()
