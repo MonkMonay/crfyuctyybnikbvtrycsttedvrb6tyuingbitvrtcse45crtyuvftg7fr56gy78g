@@ -60,7 +60,6 @@
         .node rect {
             stroke: #333;
             cursor: pointer;
-            transition: opacity 0.3s ease;
         }
         .node text {
             pointer-events: none;
@@ -71,17 +70,9 @@
         .link {
             fill: none;
             stroke-opacity: 0.6;
-            transition: stroke-opacity 0.3s ease, stroke-width 0.3s ease;
         }
         .link:hover {
             stroke-opacity: 0.9;
-        }
-        .link.faded {
-            stroke-opacity: 0.1;
-        }
-        .link.highlighted {
-            stroke-opacity: 0.9;
-            stroke-width: 3px;
         }
     </style>
     <script>
@@ -217,35 +208,34 @@
             }
             const data = doc.data();
             console.log('Loaded data:', data);
-
+            
             // Calculate income sources
             const incomeSources = [];
             const primaryIncome = parseFloat(data['Primary Monthly Income']) || 0;
             const additionalIncome = parseFloat(data['Additional Monthly Income']) || 0;
-
+            
             if (primaryIncome > 0) {
                 incomeSources.push({
                     name: data['Primary Income Source'] || 'Primary Income',
                     amount: primaryIncome * 12
                 });
             }
-
+            
             if (additionalIncome > 0) {
                 incomeSources.push({
                     name: 'Additional Income',
                     amount: additionalIncome * 12
                 });
             }
-
-            // Removed Irregular Income - only keeping first 3 income sources
-            // const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
-            // if (irregularIncome > 0) {
-            //     incomeSources.push({
-            //         name: 'Irregular Income',
-            //         amount: irregularIncome
-            //     });
-            // }
-
+            
+            const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
+            if (irregularIncome > 0) {
+                incomeSources.push({
+                    name: 'Irregular Income',
+                    amount: irregularIncome
+                });
+            }
+            
             // If no income sources found, use total income
             if (incomeSources.length === 0) {
                 const totalMonthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
@@ -256,27 +246,28 @@
                     });
                 }
             }
-
+            
             // Calculate category totals and subcategory totals
             const categoryTotals = {};
             const subcategoryTotals = {};
-
+            
             for (const category of spendingCategories) {
                 if (category.title === 'Income') continue;
-
+                
                 let categoryTotal = 0;
                 for (const item of category.items) {
                     const value = data[item.label];
                     // Skip Mortgage Principal as it's handled separately
                     if (item.label === 'Mortgage Principal') continue;
-
+                    
                     if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                         const numValue = parseFloat(value);
                         categoryTotal += numValue;
                         subcategoryTotals[item.label] = numValue;
                     }
                 }
-
+                
+                // Handle special case for mortgage principal
                 if (category.title === 'Housing') {
                     const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
                     if (mortgagePrincipal > 0) {
@@ -284,26 +275,26 @@
                         subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
                     }
                 }
-
+                
                 if (categoryTotal > 0) {
                     categoryTotals[category.title] = categoryTotal;
                 }
             }
-
+            
             console.log('Income sources:', incomeSources);
             console.log('Category totals:', categoryTotals);
             console.log('Subcategory totals:', subcategoryTotals);
-
+            
             if (incomeSources.length === 0) {
                 document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No income data found. Please complete the income section of the bank questionnaire.</div>';
                 return;
             }
-
+            
             if (Object.keys(categoryTotals).length === 0) {
                 document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data found. Please complete the spending section of the bank questionnaire.</div>';
                 return;
             }
-
+            
             createSankeyChart(incomeSources, categoryTotals, subcategoryTotals);
         }).catch(error => {
             console.error('Error loading data:', error);
@@ -363,10 +354,7 @@
         });
         
         // Create links from budget to categories
-        Object.keys(categoryTotals).forEach((category, index) => {
-            // Skip the 4th category (Financial Obligations) from main display
-            if (index === 3) return; // Skip 4th category
-            
+        Object.keys(categoryTotals).forEach(category => {
             if (nodeNames.has("Budget") && nodeNames.has(category)) {
                 links.push({
                     source: nodeNameToIndex["Budget"],
@@ -384,9 +372,6 @@
                 
                 const found = category.items.find(item => item.label === subcategory);
                 if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
-                    // Skip subcategories of the 4th category (Financial Obligations)
-                    if (category.title === 'Financial Obligations') continue;
-                    
                     links.push({
                         source: nodeNameToIndex[category.title],
                         target: nodeNameToIndex[subcategory],
@@ -444,23 +429,15 @@
                 .domain(nodes.map(d => d.name))
                 .range(d3.schemeCategory10);
             
-            // Calculate max value for scaling line thickness
-            const maxValue = d3.max(validLinks, d => d.value);
-            const minThickness = 1;
-            const maxThickness = 8;
-            
             // Create links
-            const link = svg.append("g")
+            svg.append("g")
                 .selectAll("path")
                 .data(sankeyLinks)
                 .join("path")
                     .attr("class", "link")
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
-                    .attr("stroke-width", d => {
-                        const thickness = minThickness + (d.value / maxValue) * (maxThickness - minThickness);
-                        return Math.max(1, thickness);
-                    })
+                    .attr("stroke-width", d => Math.max(1, d.width))
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
             
@@ -476,75 +453,7 @@
                 .attr("y", d => d.y0)
                 .attr("height", d => d.y1 - d.y0)
                 .attr("width", d => d.x1 - d.x0)
-                .attr("fill", d => color(d.name))
-                .on("mouseover", function(event, d) {
-                    // Highlight this node and its connections
-                    const nodeName = d.name;
-                    
-                    // Fade all links
-                    svg.selectAll(".link")
-                        .classed("faded", true);
-                    
-                    // Highlight links connected to this node
-                    svg.selectAll(".link")
-                        .filter(link => link.source.name === nodeName || link.target.name === nodeName)
-                        .classed("faded", false)
-                        .classed("highlighted", true);
-                    
-                    // Show Financial Obligations category if hovering over Budget or other main categories
-                    if (nodeName === "Budget" || Object.keys(categoryTotals).includes(nodeName)) {
-                        // Find Financial Obligations category and its subcategories
-                        const financialObligationsCategory = Object.keys(categoryTotals).find((cat, index) => index === 3);
-                        if (financialObligationsCategory) {
-                            // Show Financial Obligations node
-                            svg.selectAll(".node")
-                                .filter(node => node.name === financialObligationsCategory)
-                                .style("opacity", 1);
-                            
-                            // Show connections to Financial Obligations
-                            svg.selectAll(".link")
-                                .filter(link => link.source.name === "Budget" && link.target.name === financialObligationsCategory)
-                                .classed("faded", false)
-                                .classed("highlighted", true);
-                            
-                            // Show Financial Obligations subcategories
-                            Object.keys(subcategoryTotals).forEach(subcategory => {
-                                for (const category of spendingCategories) {
-                                    if (category.title === 'Financial Obligations') {
-                                        const found = category.items.find(item => item.label === subcategory);
-                                        if (found) {
-                                            svg.selectAll(".node")
-                                                .filter(node => node.name === subcategory)
-                                                .style("opacity", 1);
-                                            
-                                            svg.selectAll(".link")
-                                                .filter(link => link.source.name === financialObligationsCategory && link.target.name === subcategory)
-                                                .classed("faded", false)
-                                                .classed("highlighted", true);
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }
-                    
-                    // Fade other nodes
-                    svg.selectAll(".node rect")
-                        .style("opacity", 0.3);
-                    
-                    // Highlight this node
-                    d3.select(this)
-                        .style("opacity", 1);
-                })
-                .on("mouseout", function(event, d) {
-                    // Restore all links and nodes
-                    svg.selectAll(".link")
-                        .classed("faded", false)
-                        .classed("highlighted", false);
-                    
-                    svg.selectAll(".node rect")
-                        .style("opacity", 1);
-                });
+                .attr("fill", d => color(d.name));
             
             node.append("text")
                 .attr("x", d => d.x0 - 6)
