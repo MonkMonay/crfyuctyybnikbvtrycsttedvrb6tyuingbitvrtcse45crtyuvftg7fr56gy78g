@@ -311,42 +311,51 @@
         // Prepare data for D3 Sankey
         const nodes = [];
         const links = [];
+        const nodeNames = new Set(); // Track all node names
         
         // Add income source nodes
         incomeSources.forEach(source => {
             nodes.push({ name: source.name });
+            nodeNames.add(source.name);
         });
         
         // Add budget node
         nodes.push({ name: "Budget" });
+        nodeNames.add("Budget");
         
         // Add category nodes
         Object.keys(categoryTotals).forEach(category => {
             nodes.push({ name: category });
+            nodeNames.add(category);
         });
         
         // Add subcategory nodes
         Object.keys(subcategoryTotals).forEach(subcategory => {
             nodes.push({ name: subcategory });
+            nodeNames.add(subcategory);
         });
         
         // Create links from income sources to budget
         const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
         incomeSources.forEach(source => {
-            links.push({
-                source: source.name,
-                target: "Budget",
-                value: source.amount
-            });
+            if (nodeNames.has(source.name) && nodeNames.has("Budget")) {
+                links.push({
+                    source: source.name,
+                    target: "Budget",
+                    value: source.amount
+                });
+            }
         });
         
         // Create links from budget to categories
         Object.keys(categoryTotals).forEach(category => {
-            links.push({
-                source: "Budget",
-                target: category,
-                value: categoryTotals[category] * 12
-            });
+            if (nodeNames.has("Budget") && nodeNames.has(category)) {
+                links.push({
+                    source: "Budget",
+                    target: category,
+                    value: categoryTotals[category] * 12
+                });
+            }
         });
         
         // Create links from categories to subcategories
@@ -356,7 +365,7 @@
                 if (category.title === 'Income') continue;
                 
                 const found = category.items.find(item => item.label === subcategory);
-                if (found) {
+                if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
                     links.push({
                         source: category.title,
                         target: subcategory,
@@ -367,8 +376,27 @@
             }
         });
         
-        console.log('Sankey nodes:', nodes.length);
-        console.log('Sankey links:', links.length);
+        console.log('Sankey nodes:', nodes.map(n => n.name));
+        console.log('Sankey links:', links.map(l => `${l.source} → ${l.target}`));
+        
+        // Validate that all links reference existing nodes
+        const allNodeNames = new Set(nodes.map(n => n.name));
+        const validLinks = links.filter(link => {
+            const sourceExists = allNodeNames.has(link.source);
+            const targetExists = allNodeNames.has(link.target);
+            if (!sourceExists || !targetExists) {
+                console.warn(`Removing invalid link: ${link.source} → ${link.target}`);
+                return false;
+            }
+            return true;
+        });
+        
+        console.log('Valid links count:', validLinks.length);
+        
+        if (validLinks.length === 0) {
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No valid data connections found. Please complete the bank questionnaire with both income and spending data.</div>';
+            return;
+        }
         
         // Create the chart
         const width = chartContainer.clientWidth - 40; // Account for padding
@@ -385,9 +413,19 @@
             .extent([[1, 1], [width - 1, height - 6]]);
         
         try {
+            // Create clean copies for D3
+            const cleanNodes = nodes.map(d => ({ name: d.name }));
+            const cleanLinks = validLinks.map(d => ({
+                source: d.source,
+                target: d.target,
+                value: d.value
+            }));
+            
+            console.log('About to create Sankey with nodes:', cleanNodes.length, 'and links:', cleanLinks.length);
+            
             const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
-                nodes: nodes.map(d => Object.assign({}, d)),
-                links: links.map(d => Object.assign({}, d))
+                nodes: cleanNodes,
+                links: cleanLinks
             });
             
             const color = d3.scaleOrdinal()
@@ -432,6 +470,7 @@
                 
         } catch (error) {
             console.error('Error creating Sankey chart:', error);
+            console.error('Error details:', error.message);
             chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error creating chart. Please check the console for details.</div>';
         }
     }
