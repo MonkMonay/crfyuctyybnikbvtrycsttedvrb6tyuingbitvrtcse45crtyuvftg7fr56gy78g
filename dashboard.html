@@ -209,6 +209,9 @@
             const data = doc.data();
             console.log('Loaded data:', data);
             
+            // Store data globally for access in click handlers
+            window.sankeyData = data;
+            
             // Calculate income sources
             const incomeSources = [];
             const primaryIncome = parseFloat(data['Primary Monthly Income']) || 0;
@@ -437,7 +440,7 @@
                     .attr("stroke-width", d => Math.max(1, d.width))
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
-                        toggleDetailedBreakdown(d, event, data);
+                        toggleDetailedBreakdown(d, event, window.sankeyData);
                     })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
@@ -518,7 +521,7 @@
                     hideDetailedBreakdown();
                 } else {
                     // Expand to show subcategories
-                    showDetailedBreakdown(linkData, event, data);
+                    showDetailedBreakdown(linkData, event, window.sankeyData);
                 }
             }
             
@@ -633,7 +636,7 @@
                         .attr("stroke-width", d => Math.max(1, d.width))
                         .on("click", function(event, d) {
                             // Toggle detailed breakdown for this link
-                            toggleDetailedBreakdown(d, event, data);
+                            toggleDetailedBreakdown(d, event, window.sankeyData);
                         })
                         .append("title")
                         .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
