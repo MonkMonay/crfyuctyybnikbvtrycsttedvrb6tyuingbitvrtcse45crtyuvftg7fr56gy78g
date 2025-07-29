@@ -28,6 +28,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <!-- Firebase Auth SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
@@ -68,6 +70,99 @@
     const welcome = document.getElementById('welcome');
     const userEmail = document.getElementById('userEmail');
     const logoutBtn = document.getElementById('logoutBtn');
+
+    // Spending categories matching the bank page structure
+    const spendingCategories = [
+        { title: "Income", items: [
+            { label: "Primary Income Source" },
+            { label: "Primary Monthly Income" },
+            { label: "Has Additional Income" },
+            { label: "Additional Income Sources" },
+            { label: "Additional Monthly Income" },
+            { label: "Total Monthly Income" },
+            { label: "Has Irregular Income" },
+            { label: "Irregular Income Types" },
+            { label: "Annual Irregular Income" },
+            { label: "Total Annual Income" }
+        ]},
+        { title: "Housing", items: [
+            { label: "Rent/Mortgage" },
+            { label: "Mortgage Interest Rate & Principal" },
+            { label: "Property Taxes" },
+            { label: "Home Insurance" },
+            { label: "Utilities (Electricity, Water, Gas)" },
+            { label: "Internet & Phone" },
+            { label: "Maintenance/Repairs" },
+            { label: "HOA Fees" }
+        ]},
+        { title: "Transportation", items: [
+            { label: "Car Payment/Lease" },
+            { label: "Gas/Fuel" },
+            { label: "Car Insurance" },
+            { label: "Maintenance/Repairs" },
+            { label: "Public Transportation" },
+            { label: "Parking Fees" },
+            { label: "Uber/Lyft" }
+        ]},
+        { title: "Food & Dining", items: [
+            { label: "Groceries" },
+            { label: "Restaurants" },
+            { label: "Fast Food" },
+            { label: "Coffee Shops" },
+            { label: "Food Delivery" },
+            { label: "Alcohol/Bars" }
+        ]},
+        { title: "Personal & Health", items: [
+            { label: "Health Insurance" },
+            { label: "Doctor Visits" },
+            { label: "Prescriptions" },
+            { label: "Dental Care" },
+            { label: "Vision Care" },
+            { label: "Gym Membership" },
+            { label: "Haircuts/Salon" },
+            { label: "Personal Hygiene Products" },
+            { label: "Clothing/Shoes" },
+            { label: "Cosmetics/Beauty" }
+        ]},
+        { title: "Entertainment & Lifestyle", items: [
+            { label: "Streaming Services" },
+            { label: "Movies/Theater" },
+            { label: "Concerts/Events" },
+            { label: "Books/Magazines" },
+            { label: "Video Games" },
+            { label: "Hobbies" },
+            { label: "Vacations" },
+            { label: "Hotels" },
+            { label: "Flights" },
+            { label: "Car Rentals" },
+            { label: "Travel Insurance" }
+        ]},
+        { title: "Financial Obligations", items: [
+            { label: "Credit Cards" },
+            { label: "Student Loans" },
+            { label: "Personal Loans" },
+            { label: "Medical Debt" },
+            { label: "Emergency Fund" },
+            { label: "Retirement Savings" },
+            { label: "Investment Accounts" },
+            { label: "College Savings" }
+        ]},
+        { title: "Other", items: [
+            { label: "Tuition" },
+            { label: "Books/Supplies" },
+            { label: "Courses/Certifications" },
+            { label: "Birthday/Holiday Gifts" },
+            { label: "Charitable Donations" },
+            { label: "Wedding Gifts" },
+            { label: "Life Insurance" },
+            { label: "Disability Insurance" },
+            { label: "Pet Insurance" },
+            { label: "Pet Food" },
+            { label: "Vet Visits" },
+            { label: "Pet Supplies" }
+        ]}
+    ];
+
     auth.onAuthStateChanged(function(user) {
         if (user) {
             welcome.textContent = `You're logged in as: ${user.email}`;
@@ -86,41 +181,69 @@
 
     function loadSankeyData(uid) {
         db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
-            if (!doc.exists) return;
+            if (!doc.exists) {
+                console.log('No spending data found');
+                return;
+            }
             const data = doc.data();
-            const categories = [
-                'Housing', 'Transportation', 'Food & Dining', 'Personal & Health', 'Entertainment & Lifestyle', 'Financial Obligations', 'Other'
-            ];
-            // Only sum numeric, dollar-amount fields (exclude interest rates, skipped, etc.)
+            console.log('Loaded data:', data);
+            
+            // Calculate category totals
             const categoryTotals = {};
-            for (const key in data) {
-                for (const cat of categories) {
-                    // Exclude interest rate and non-numeric/skipped fields
-                    if (
-                        key.toLowerCase().includes(cat.toLowerCase()) &&
-                        !key.toLowerCase().includes('interest rate') &&
-                        !key.toLowerCase().includes('principal') &&
-                        data[key] !== 'skipped' &&
-                        !isNaN(parseFloat(data[key])) &&
-                        isFinite(data[key])
-                    ) {
-                        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(data[key]);
+            let totalIncome = 0;
+            
+            // Process each category
+            for (const category of spendingCategories) {
+                if (category.title === 'Income') {
+                    // Handle income separately
+                    const monthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
+                    const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
+                    totalIncome = (monthlyIncome * 12) + irregularIncome;
+                    continue;
+                }
+                
+                // Calculate total for each spending category
+                let categoryTotal = 0;
+                for (const item of category.items) {
+                    const value = data[item.label];
+                    if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
+                        categoryTotal += parseFloat(value);
                     }
                 }
-            }
-            // Add Mortgage Principal as a separate flow if present
-            if (data['Mortgage Principal'] && !isNaN(parseFloat(data['Mortgage Principal']))) {
-                categoryTotals['Housing'] = (categoryTotals['Housing'] || 0) + parseFloat(data['Mortgage Principal']);
-            }
-            // Prepare Sankey data
-            const sankeyData = [['Income', 'Category', 'Amount']];
-            let totalIncome = parseFloat(data['Total Monthly Income'] || 0);
-            for (const cat of categories) {
-                if (categoryTotals[cat]) {
-                    sankeyData.push(['Income', cat, categoryTotals[cat]]);
+                
+                // Handle special case for mortgage principal
+                if (category.title === 'Housing') {
+                    const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
+                    categoryTotal += mortgagePrincipal;
+                }
+                
+                if (categoryTotal > 0) {
+                    categoryTotals[category.title] = categoryTotal;
                 }
             }
-            google.charts.setOnLoadCallback(() => drawSankey(sankeyData));
+            
+            console.log('Category totals:', categoryTotals);
+            console.log('Total income:', totalIncome);
+            
+            // Prepare Sankey data
+            const sankeyData = [['From', 'To', 'Amount']];
+            
+            // Add income flows
+            for (const category in categoryTotals) {
+                sankeyData.push(['Income', category, categoryTotals[category]]);
+            }
+            
+            console.log('Sankey data:', sankeyData);
+            
+            if (sankeyData.length > 1) {
+                google.charts.setOnLoadCallback(() => drawSankey(sankeyData));
+            } else {
+                console.log('No valid data for Sankey chart');
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
+            }
+        }).catch(error => {
+            console.error('Error loading data:', error);
+            document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
         });
     }
 
@@ -129,10 +252,23 @@
         const chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
         chart.draw(data, {
             sankey: {
-                node: { label: { fontName: 'Montserrat', fontSize: 16, color: '#fff', bold: true }, color: { fill: '#222' } },
-                link: { color: { fill: '#FFD700', fillOpacity: 0.7 } }
+                node: { 
+                    label: { 
+                        fontName: 'Montserrat', 
+                        fontSize: 16, 
+                        color: '#fff', 
+                        bold: true 
+                    }, 
+                    color: { fill: '#222' } 
+                },
+                link: { 
+                    color: { 
+                        fill: '#FFD700', 
+                        fillOpacity: 0.7 
+                    } 
+                }
             },
-            backgroundColor: 'red'
+            backgroundColor: 'transparent'
         });
     }
     </script>
