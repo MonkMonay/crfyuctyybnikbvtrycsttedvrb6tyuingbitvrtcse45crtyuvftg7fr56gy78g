@@ -282,30 +282,39 @@
                 if (category.title === 'Income') continue;
                 
                 let categoryTotal = 0;
+                let validItems = 0;
+                
                 for (const item of category.items) {
                     const value = data[item.label];
                     console.log(`Checking ${item.label}:`, value);
-                    if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
+                    
+                    // Skip if value is 'skipped', null, undefined, or empty
+                    if (value && value !== 'skipped' && value !== '' && !isNaN(parseFloat(value))) {
                         const numValue = parseFloat(value);
-                        categoryTotal += numValue;
-                        subcategoryTotals[item.label] = numValue;
-                        console.log(`Added ${item.label}: $${numValue}`);
+                        if (numValue > 0) {
+                            categoryTotal += numValue;
+                            subcategoryTotals[item.label] = numValue;
+                            validItems++;
+                            console.log(`Added ${item.label}: $${numValue}`);
+                        }
                     }
                 }
                 
                 // Handle special case for mortgage principal
                 if (category.title === 'Housing') {
                     const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
-                    categoryTotal += mortgagePrincipal;
                     if (mortgagePrincipal > 0) {
+                        categoryTotal += mortgagePrincipal;
                         subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
+                        validItems++;
                         console.log('Added Mortgage Principal:', mortgagePrincipal);
                     }
                 }
                 
-                if (categoryTotal > 0) {
+                // Only add category if it has valid data
+                if (categoryTotal > 0 && validItems > 0) {
                     categoryTotals[category.title] = categoryTotal;
-                    console.log(`Category ${category.title} total: $${categoryTotal}`);
+                    console.log(`Category ${category.title} total: $${categoryTotal} (${validItems} items)`);
                 }
             }
             
@@ -334,7 +343,7 @@
         const chartContainer = document.getElementById('sankey_chart');
         
         if (incomeSources.length === 0) {
-            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No income data found. Please complete the income section of the bank questionnaire.</div>';
             return;
         }
 
@@ -344,42 +353,59 @@
         // Prepare data for D3 Sankey
         const nodes = [];
         const links = [];
+        const nodeNames = new Set(); // Track all node names to avoid duplicates
         
         // Add income source nodes
         incomeSources.forEach(source => {
-            nodes.push({ name: source.name });
+            if (!nodeNames.has(source.name)) {
+                nodes.push({ name: source.name });
+                nodeNames.add(source.name);
+            }
         });
         
         // Add budget node
-        nodes.push({ name: "Budget" });
+        if (!nodeNames.has("Budget")) {
+            nodes.push({ name: "Budget" });
+            nodeNames.add("Budget");
+        }
         
         // Add category nodes
         Object.keys(categoryTotals).forEach(category => {
-            nodes.push({ name: category });
+            if (!nodeNames.has(category)) {
+                nodes.push({ name: category });
+                nodeNames.add(category);
+            }
         });
         
         // Add subcategory nodes
         Object.keys(subcategoryTotals).forEach(subcategory => {
-            nodes.push({ name: subcategory });
+            if (!nodeNames.has(subcategory)) {
+                nodes.push({ name: subcategory });
+                nodeNames.add(subcategory);
+            }
         });
         
         // Create links from income sources to budget
         const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
         incomeSources.forEach(source => {
-            links.push({
-                source: source.name,
-                target: "Budget",
-                value: source.amount
-            });
+            if (nodeNames.has(source.name) && nodeNames.has("Budget")) {
+                links.push({
+                    source: source.name,
+                    target: "Budget",
+                    value: source.amount
+                });
+            }
         });
         
         // Create links from budget to categories
         Object.keys(categoryTotals).forEach(category => {
-            links.push({
-                source: "Budget",
-                target: category,
-                value: categoryTotals[category] * 12
-            });
+            if (nodeNames.has("Budget") && nodeNames.has(category)) {
+                links.push({
+                    source: "Budget",
+                    target: category,
+                    value: categoryTotals[category] * 12
+                });
+            }
         });
         
         // Create links from categories to subcategories
@@ -389,7 +415,7 @@
                 if (category.title === 'Income') continue;
                 
                 const found = category.items.find(item => item.label === subcategory);
-                if (found) {
+                if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
                     links.push({
                         source: category.title,
                         target: subcategory,
@@ -399,6 +425,29 @@
                 }
             }
         });
+        
+        console.log('Sankey nodes:', nodes);
+        console.log('Sankey links:', links);
+        console.log('Node names set:', Array.from(nodeNames));
+        
+        // Validate that all links reference existing nodes
+        const allNodeNames = new Set(nodes.map(n => n.name));
+        const validLinks = links.filter(link => {
+            const sourceExists = allNodeNames.has(link.source);
+            const targetExists = allNodeNames.has(link.target);
+            if (!sourceExists || !targetExists) {
+                console.warn(`Invalid link: ${link.source} → ${link.target} (source exists: ${sourceExists}, target exists: ${targetExists})`);
+                return false;
+            }
+            return true;
+        });
+        
+        console.log('Valid links:', validLinks);
+        
+        if (validLinks.length === 0) {
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No valid data connections found. Please complete the bank questionnaire with both income and spending data.</div>';
+            return;
+        }
         
         // Create the chart
         const width = chartContainer.clientWidth;
@@ -414,50 +463,56 @@
             .nodePadding(20)
             .extent([[1, 1], [width - 1, height - 6]]);
         
-        const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
-            nodes: nodes.map(d => Object.assign({}, d)),
-            links: links.map(d => Object.assign({}, d))
-        });
-        
-        const color = d3.scaleOrdinal()
-            .domain(nodes.map(d => d.name))
-            .range(d3.schemeCategory10);
-        
-        // Create links
-        svg.append("g")
-            .selectAll("path")
-            .data(sankeyLinks)
-            .join("path")
-                .attr("class", "link")
-                .attr("d", d3.sankeyLinkHorizontal())
-                .attr("stroke", d => color(d.source.name))
-                .attr("stroke-width", d => Math.max(1, d.width))
-                .append("title")
-                .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
-        
-        // Create nodes
-        const node = svg.append("g")
-            .selectAll("g")
-            .data(sankeyNodes)
-            .join("g")
-                .attr("class", "node");
-        
-        node.append("rect")
-            .attr("x", d => d.x0)
-            .attr("y", d => d.y0)
-            .attr("height", d => d.y1 - d.y0)
-            .attr("width", d => d.x1 - d.x0)
-            .attr("fill", d => color(d.name));
-        
-        node.append("text")
-            .attr("x", d => d.x0 - 6)
-            .attr("y", d => (d.y1 + d.y0) / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "end")
-            .text(d => d.name)
-            .filter(d => d.x0 < width / 2)
-            .attr("x", d => d.x1 + 6)
-            .attr("text-anchor", "start");
+        try {
+            const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
+                nodes: nodes.map(d => Object.assign({}, d)),
+                links: validLinks.map(d => Object.assign({}, d))
+            });
+            
+            const color = d3.scaleOrdinal()
+                .domain(nodes.map(d => d.name))
+                .range(d3.schemeCategory10);
+            
+            // Create links
+            svg.append("g")
+                .selectAll("path")
+                .data(sankeyLinks)
+                .join("path")
+                    .attr("class", "link")
+                    .attr("d", d3.sankeyLinkHorizontal())
+                    .attr("stroke", d => color(d.source.name))
+                    .attr("stroke-width", d => Math.max(1, d.width))
+                    .append("title")
+                    .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+            
+            // Create nodes
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(sankeyNodes)
+                .join("g")
+                    .attr("class", "node");
+            
+            node.append("rect")
+                .attr("x", d => d.x0)
+                .attr("y", d => d.y0)
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", d => d.x1 - d.x0)
+                .attr("fill", d => color(d.name));
+            
+            node.append("text")
+                .attr("x", d => d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "end")
+                .text(d => d.name)
+                .filter(d => d.x0 < width / 2)
+                .attr("x", d => d.x1 + 6)
+                .attr("text-anchor", "start");
+                
+        } catch (error) {
+            console.error('Error creating Sankey chart:', error);
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error creating chart. Please check the console for details.</div>';
+        }
     }
 </script>
 </body>
