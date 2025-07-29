@@ -360,6 +360,7 @@
             if (!nodeNames.has(source.name)) {
                 nodes.push({ name: source.name });
                 nodeNames.add(source.name);
+                console.log('Added income node:', source.name);
             }
         });
         
@@ -367,6 +368,7 @@
         if (!nodeNames.has("Budget")) {
             nodes.push({ name: "Budget" });
             nodeNames.add("Budget");
+            console.log('Added budget node');
         }
         
         // Add category nodes
@@ -374,6 +376,7 @@
             if (!nodeNames.has(category)) {
                 nodes.push({ name: category });
                 nodeNames.add(category);
+                console.log('Added category node:', category);
             }
         });
         
@@ -382,6 +385,7 @@
             if (!nodeNames.has(subcategory)) {
                 nodes.push({ name: subcategory });
                 nodeNames.add(subcategory);
+                console.log('Added subcategory node:', subcategory);
             }
         });
         
@@ -394,6 +398,7 @@
                     target: "Budget",
                     value: source.amount
                 });
+                console.log('Added income link:', source.name, '→ Budget');
             }
         });
         
@@ -405,6 +410,7 @@
                     target: category,
                     value: categoryTotals[category] * 12
                 });
+                console.log('Added category link: Budget →', category);
             }
         });
         
@@ -421,13 +427,14 @@
                         target: subcategory,
                         value: subcategoryTotals[subcategory] * 12
                     });
+                    console.log('Added subcategory link:', category.title, '→', subcategory);
                     break;
                 }
             }
         });
         
-        console.log('Sankey nodes:', nodes);
-        console.log('Sankey links:', links);
+        console.log('Final nodes:', nodes.map(n => n.name));
+        console.log('Final links:', links.map(l => `${l.source} → ${l.target}`));
         console.log('Node names set:', Array.from(nodeNames));
         
         // Validate that all links reference existing nodes
@@ -442,7 +449,8 @@
             return true;
         });
         
-        console.log('Valid links:', validLinks);
+        console.log('Valid links count:', validLinks.length);
+        console.log('All node names:', Array.from(allNodeNames));
         
         if (validLinks.length === 0) {
             chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No valid data connections found. Please complete the bank questionnaire with both income and spending data.</div>';
@@ -464,6 +472,7 @@
             .extent([[1, 1], [width - 1, height - 6]]);
         
         try {
+            console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
             const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
                 nodes: nodes.map(d => Object.assign({}, d)),
                 links: validLinks.map(d => Object.assign({}, d))
@@ -511,6 +520,7 @@
                 
         } catch (error) {
             console.error('Error creating Sankey chart:', error);
+            console.error('Error details:', error.message);
             chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error creating chart. Please check the console for details.</div>';
         }
     }
