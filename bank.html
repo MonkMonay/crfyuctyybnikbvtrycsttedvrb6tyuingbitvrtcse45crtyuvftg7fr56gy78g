@@ -574,6 +574,9 @@
             
             for (const item of category.items) {
                 const value = userResponses[item.label];
+                // Skip Mortgage Principal as it's handled separately
+                if (item.label === 'Mortgage Principal') continue;
+                
                 if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                     totalSpending += parseFloat(value);
                 }
@@ -615,6 +618,9 @@
             
             for (const item of category.items) {
                 const value = userResponses[item.label];
+                // Skip Mortgage Principal as it's handled separately
+                if (item.label === 'Mortgage Principal') continue;
+                
                 if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                     const numValue = parseFloat(value);
                     categoryTotal += numValue;
