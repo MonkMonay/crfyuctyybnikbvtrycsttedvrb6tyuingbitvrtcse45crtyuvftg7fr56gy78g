@@ -51,65 +51,41 @@
             <div class="welcome-text" id="welcome"></div>
         </div>
         <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
-        <div id="sankey_chart" style="width:100%;max-width:1200px;margin:0 auto;background:#222;border-radius:16px;padding:20px;min-height:600px;overflow-x:auto;"></div>
+        <div id="sankey_chart" style="width:100%;max-width:1200px;margin:0 auto;background:#222;border-radius:16px;padding:20px;min-height:600px;"></div>
     </div>
     <style>
-        .sankey-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 500px;
-            padding: 20px;
-            position: relative;
+        .node rect {
+            stroke: #333;
+            cursor: pointer;
         }
-        
-        .sankey-column {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-width: 120px;
-        }
-        
-        .sankey-node {
-            background: #4a90e2;
-            border-radius: 4px;
-            margin: 2px 0;
-            padding: 8px 12px;
-            color: white;
+        .node text {
+            pointer-events: none;
             font-size: 12px;
-            font-weight: bold;
+            font-family: 'Montserrat', Arial, sans-serif;
+            fill: #fff;
+        }
+        .link {
+            fill: none;
+            stroke-opacity: 0.6;
+        }
+        .link:hover {
+            stroke-opacity: 0.9;
+        }
+        .tooltip {
+            position: absolute;
             text-align: center;
-            position: relative;
-            white-space: nowrap;
-        }
-        
-        .sankey-node.income { background: #7cb342; }
-        .sankey-node.budget { background: #1976d2; }
-        .sankey-node.taxes { background: #ff9800; }
-        .sankey-node.housing { background: #8d6e63; }
-        .sankey-node.transportation { background: #4caf50; }
-        .sankey-node.food { background: #607d8b; }
-        .sankey-node.personal { background: #9c27b0; }
-        .sankey-node.entertainment { background: #00bcd4; }
-        .sankey-node.financial { background: #ff5722; }
-        .sankey-node.other { background: #795548; }
-        
-        .sankey-connection {
-            position: absolute;
-            background: rgba(255, 215, 0, 0.6);
-            border-radius: 2px;
-            z-index: 1;
-        }
-        
-        .sankey-label {
-            position: absolute;
+            padding: 8px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.8);
             color: #fff;
-            font-size: 10px;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            z-index: 2;
+            border-radius: 4px;
+            pointer-events: none;
+            font-family: 'Montserrat', Arial, sans-serif;
         }
     </style>
+    <!-- D3.js and D3 Sankey -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
     <script>
     // Initialize Firebase
     const firebaseConfig = {
@@ -332,79 +308,126 @@
             return;
         }
 
+        // Clear previous chart
+        chartContainer.innerHTML = '';
+        
+        // Prepare data for D3 Sankey
+        const nodes = [];
+        const links = [];
+        
+        // Add income source nodes
+        incomeSources.forEach(source => {
+            nodes.push({ name: source.name });
+        });
+        
+        // Add budget node
+        nodes.push({ name: "Budget" });
+        
+        // Add category nodes
+        Object.keys(categoryTotals).forEach(category => {
+            nodes.push({ name: category });
+        });
+        
+        // Add subcategory nodes
+        Object.keys(subcategoryTotals).forEach(subcategory => {
+            nodes.push({ name: subcategory });
+        });
+        
+        // Create links from income sources to budget
         const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-        const totalSpending = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0) * 12;
+        incomeSources.forEach(source => {
+            links.push({
+                source: source.name,
+                target: "Budget",
+                value: source.amount
+            });
+        });
         
-        let html = '<div class="sankey-container">';
+        // Create links from budget to categories
+        Object.keys(categoryTotals).forEach(category => {
+            links.push({
+                source: "Budget",
+                target: category,
+                value: categoryTotals[category] * 12
+            });
+        });
         
-        // Income sources column
-        html += '<div class="sankey-column">';
-        for (const source of incomeSources) {
-            const height = (source.amount / totalIncome) * 400;
-            html += `<div class="sankey-node income" style="height: ${height}px; line-height: ${height}px;">`;
-            html += `${source.name}<br>$${source.amount.toLocaleString()}`;
-            html += '</div>';
-        }
-        html += '</div>';
-        
-        // Budget column
-        html += '<div class="sankey-column">';
-        html += `<div class="sankey-node budget" style="height: 400px; line-height: 400px;">`;
-        html += `Budget<br>$${totalIncome.toLocaleString()}`;
-        html += '</div>';
-        html += '</div>';
-        
-        // Categories column
-        html += '<div class="sankey-column">';
-        for (const category in categoryTotals) {
-            const categoryTotal = categoryTotals[category];
-            const height = (categoryTotal * 12 / totalIncome) * 400;
-            const colorClass = category.toLowerCase().replace(/\s+/g, '');
-            html += `<div class="sankey-node ${colorClass}" style="height: ${height}px; line-height: ${height}px;">`;
-            html += `${category}<br>$${(categoryTotal * 12).toLocaleString()}`;
-            html += '</div>';
-        }
-        html += '</div>';
-        
-        // Subcategories column
-        html += '<div class="sankey-column">';
-        for (const category in categoryTotals) {
-            const categoryTotal = categoryTotals[category];
-            const categoryHeight = (categoryTotal * 12 / totalIncome) * 400;
-            const colorClass = category.toLowerCase().replace(/\s+/g, '');
-            
-            // Find subcategories for this category
-            const subcategories = [];
-            for (const subcategory in subcategoryTotals) {
-                for (const cat of spendingCategories) {
-                    if (cat.title === category) {
-                        const found = cat.items.find(item => item.label === subcategory);
-                        if (found) {
-                            subcategories.push({
-                                name: subcategory,
-                                amount: subcategoryTotals[subcategory] * 12
-                            });
-                        }
-                        break;
-                    }
+        // Create links from categories to subcategories
+        Object.keys(subcategoryTotals).forEach(subcategory => {
+            // Find which category this subcategory belongs to
+            for (const category of spendingCategories) {
+                if (category.title === 'Income') continue;
+                
+                const found = category.items.find(item => item.label === subcategory);
+                if (found) {
+                    links.push({
+                        source: category.title,
+                        target: subcategory,
+                        value: subcategoryTotals[subcategory] * 12
+                    });
+                    break;
                 }
             }
-            
-            // Create subcategory nodes
-            let currentY = 0;
-            for (const sub of subcategories) {
-                const subHeight = (sub.amount / totalIncome) * 400;
-                html += `<div class="sankey-node ${colorClass}" style="height: ${subHeight}px; line-height: ${subHeight}px; margin-top: ${currentY}px;">`;
-                html += `${sub.name}<br>$${sub.amount.toLocaleString()}`;
-                html += '</div>';
-                currentY += subHeight + 2;
-            }
-        }
-        html += '</div>';
+        });
         
-        html += '</div>';
+        // Create the chart
+        const width = chartContainer.clientWidth;
+        const height = 500;
         
-        chartContainer.innerHTML = html;
+        const svg = d3.select("#sankey_chart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        
+        const sankey = d3.sankey()
+            .nodeWidth(30)
+            .nodePadding(20)
+            .extent([[1, 1], [width - 1, height - 6]]);
+        
+        const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
+            nodes: nodes.map(d => Object.assign({}, d)),
+            links: links.map(d => Object.assign({}, d))
+        });
+        
+        const color = d3.scaleOrdinal()
+            .domain(nodes.map(d => d.name))
+            .range(d3.schemeCategory10);
+        
+        // Create links
+        svg.append("g")
+            .selectAll("path")
+            .data(sankeyLinks)
+            .join("path")
+                .attr("class", "link")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke", d => color(d.source.name))
+                .attr("stroke-width", d => Math.max(1, d.width))
+                .append("title")
+                .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+        
+        // Create nodes
+        const node = svg.append("g")
+            .selectAll("g")
+            .data(sankeyNodes)
+            .join("g")
+                .attr("class", "node");
+        
+        node.append("rect")
+            .attr("x", d => d.x0)
+            .attr("y", d => d.y0)
+            .attr("height", d => d.y1 - d.y0)
+            .attr("width", d => d.x1 - d.x0)
+            .attr("fill", d => color(d.name));
+        
+        node.append("text")
+            .attr("x", d => d.x0 - 6)
+            .attr("y", d => (d.y1 + d.y0) / 2)
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "end")
+            .text(d => d.name)
+            .filter(d => d.x0 < width / 2)
+            .attr("x", d => d.x1 + 6)
+            .attr("text-anchor", "start");
     }
 </script>
 </body>
