@@ -435,11 +435,9 @@
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(1, d.width))
-                    .on("mouseover", function(event, d) {
-                        showDetailedBreakdown(d, event);
-                    })
-                    .on("mouseout", function(event, d) {
-                        hideDetailedBreakdown();
+                    .on("click", function(event, d) {
+                        // Toggle detailed breakdown for this link
+                        toggleDetailedBreakdown(d, event);
                     })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
@@ -500,6 +498,29 @@
                 .filter(d => d.x0 < width / 2)
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start");
+            
+            // Function to toggle detailed breakdown
+            function toggleDetailedBreakdown(linkData, event) {
+                const targetCategory = linkData.target.name;
+                
+                // Only expand for category links (from Budget to categories)
+                if (linkData.source.name !== "Budget") return;
+                
+                // Check if this category is already expanded
+                const isExpanded = sankeyNodes.some(node => 
+                    node.name !== targetCategory && 
+                    spendingCategories.some(cat => cat.title === targetCategory && 
+                        cat.items.some(item => item.label === node.name))
+                );
+                
+                if (isExpanded) {
+                    // Collapse back to original view
+                    hideDetailedBreakdown();
+                } else {
+                    // Expand to show subcategories
+                    showDetailedBreakdown(linkData, event);
+                }
+            }
             
             // Function to show detailed breakdown
             function showDetailedBreakdown(linkData, event) {
@@ -610,11 +631,9 @@
                         .attr("d", d3.sankeyLinkHorizontal())
                         .attr("stroke", d => colorScale(d.source.name))
                         .attr("stroke-width", d => Math.max(1, d.width))
-                        .on("mouseover", function(event, d) {
-                            showDetailedBreakdown(d, event);
-                        })
-                        .on("mouseout", function(event, d) {
-                            hideDetailedBreakdown();
+                        .on("click", function(event, d) {
+                            // Toggle detailed breakdown for this link
+                            toggleDetailedBreakdown(d, event);
                         })
                         .append("title")
                         .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
