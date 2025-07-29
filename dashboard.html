@@ -3,26 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Bonobudget</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700&display=swap">
+    <title>Dashboard - BonoBudget</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #111; color: #fff; font-family: 'Montserrat', Arial, sans-serif; margin: 0; }
-        .header { background: #222; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 0 0 20px 20px; }
-        .logo { font-size: 24px; font-weight: bold; color: #4caf50; }
-        .nav { display: flex; gap: 30px; }
-        .nav-item { color: #ccc; text-decoration: none; padding: 12px 20px; border-radius: 15px; transition: all 0.2s; cursor: pointer; }
-        .nav-item:hover { background: #333; color: #fff; }
-        .nav-item.active { background: #4caf50; color: #fff; }
-        .profile { display: flex; align-items: center; gap: 15px; }
-        .profile-email { color: #ccc; }
-        .logout-btn { background: #ff5252; color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; transition: background 0.2s; }
-        .logout-btn:hover { background: #d32f2f; }
-        .container { padding: 30px; }
-        .welcome { background: #222; padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        h1 { margin: 0 0 10px 0; color: #4caf50; }
-        .welcome-text { color: #ccc; font-size: 18px; }
-        .returntoindex { text-decoration: none; color: #4caf50; }
-        .returntoindex:hover, .returntoindex:visited, .returntoindex:active { color: #4caf50; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-email {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        
+        .welcome-text {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #FFD700;
+        }
+        
+        /* Google Ads Styling */
+        .ads-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            gap: 20px;
+        }
+        
+        .ad-sidebar {
+            width: 300px;
+            min-height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ad-banner {
+            width: 100%;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .main-content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .ad-sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -46,12 +166,137 @@
         </div>
     </div>
     <div class="container">
-        <div class="welcome" style="margin-bottom: 60px;">
-            <h1>Welcome to your Dashboard</h1>
-            <div class="welcome-text" id="welcome"></div>
+        <div class="header">
+            <div class="logo">BonoBudget</div>
+            <div class="user-info">
+                <div class="user-email" id="userEmail"></div>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
         </div>
-        <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Financial Flow</h2>
-        <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
+        
+        <div class="welcome-text" id="welcome"></div>
+        
+        <div class="content-wrapper">
+            <!-- Left Sidebar Ads -->
+            <div class="ad-sidebar">
+                <div class="ad-banner">
+                    <!-- Google AdSense - Sidebar Top -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+                
+                <div class="ad-banner">
+                    <!-- Google AdSense - Sidebar Middle -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+                
+                <div class="ad-banner">
+                    <!-- Google AdSense - Sidebar Bottom -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></script>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Financial Flow</h2>
+                <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
+            </div>
+            
+            <!-- Right Sidebar Ads -->
+            <div class="ad-sidebar">
+                <div class="ad-banner">
+                    <!-- Google AdSense - Right Sidebar Top -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+                
+                <div class="ad-banner">
+                    <!-- Google AdSense - Right Sidebar Middle -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsgoogle || []).push({});
+                    </script>
+                </div>
+                
+                <div class="ad-banner">
+                    <!-- Google AdSense - Right Sidebar Bottom -->
+                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                         crossorigin="anonymous"></script>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Banner Ad -->
+        <div style="margin-top: 30px; text-align: center;">
+            <div class="ad-banner" style="height: 120px; margin: 0 auto; max-width: 728px;">
+                <!-- Google AdSense - Bottom Banner -->
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+                     crossorigin="anonymous"></script>
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                     data-ad-slot="YOUR_AD_SLOT_ID"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
     </div>
     <!-- D3.js and D3 Sankey -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
