@@ -323,16 +323,10 @@
         nodes.push({ name: "Budget" });
         nodeNames.add("Budget");
         
-        // Add category nodes
+        // Add category nodes (only main categories, no subcategories)
         Object.keys(categoryTotals).forEach(category => {
             nodes.push({ name: category });
             nodeNames.add(category);
-        });
-        
-        // Add subcategory nodes
-        Object.keys(subcategoryTotals).forEach(subcategory => {
-            nodes.push({ name: subcategory });
-            nodeNames.add(subcategory);
         });
         
         // Create a mapping from node names to indices
@@ -361,24 +355,6 @@
                     target: nodeNameToIndex[category],
                     value: categoryTotals[category] * 12
                 });
-            }
-        });
-        
-        // Create links from categories to subcategories
-        Object.keys(subcategoryTotals).forEach(subcategory => {
-            // Find which category this subcategory belongs to
-            for (const category of spendingCategories) {
-                if (category.title === 'Income') continue;
-                
-                const found = category.items.find(item => item.label === subcategory);
-                if (found && nodeNames.has(category.title) && nodeNames.has(subcategory)) {
-                    links.push({
-                        source: nodeNameToIndex[category.title],
-                        target: nodeNameToIndex[subcategory],
-                        value: subcategoryTotals[subcategory] * 12
-                    });
-                    break;
-                }
             }
         });
         
