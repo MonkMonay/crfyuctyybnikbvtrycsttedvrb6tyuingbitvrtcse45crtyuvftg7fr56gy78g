@@ -229,12 +229,15 @@
                 return;
             }
             const data = doc.data();
-            console.log('Loaded data:', data);
+            console.log('Raw Firestore data:', data);
             
             // Calculate income sources
             const incomeSources = [];
             const primaryIncome = parseFloat(data['Primary Monthly Income']) || 0;
             const additionalIncome = parseFloat(data['Additional Monthly Income']) || 0;
+            
+            console.log('Primary income:', primaryIncome);
+            console.log('Additional income:', additionalIncome);
             
             if (primaryIncome > 0) {
                 incomeSources.push({
@@ -251,11 +254,24 @@
             }
             
             const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
+            console.log('Irregular income:', irregularIncome);
+            
             if (irregularIncome > 0) {
                 incomeSources.push({
                     name: 'Irregular Income',
                     amount: irregularIncome
                 });
+            }
+            
+            // If no income sources found, try alternative fields
+            if (incomeSources.length === 0) {
+                const totalMonthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
+                if (totalMonthlyIncome > 0) {
+                    incomeSources.push({
+                        name: 'Total Income',
+                        amount: totalMonthlyIncome * 12
+                    });
+                }
             }
             
             // Calculate category totals and subcategory totals
@@ -268,10 +284,12 @@
                 let categoryTotal = 0;
                 for (const item of category.items) {
                     const value = data[item.label];
+                    console.log(`Checking ${item.label}:`, value);
                     if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
                         const numValue = parseFloat(value);
                         categoryTotal += numValue;
                         subcategoryTotals[item.label] = numValue;
+                        console.log(`Added ${item.label}: $${numValue}`);
                     }
                 }
                 
@@ -281,17 +299,29 @@
                     categoryTotal += mortgagePrincipal;
                     if (mortgagePrincipal > 0) {
                         subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
+                        console.log('Added Mortgage Principal:', mortgagePrincipal);
                     }
                 }
                 
                 if (categoryTotal > 0) {
                     categoryTotals[category.title] = categoryTotal;
+                    console.log(`Category ${category.title} total: $${categoryTotal}`);
                 }
             }
             
             console.log('Income sources:', incomeSources);
             console.log('Category totals:', categoryTotals);
             console.log('Subcategory totals:', subcategoryTotals);
+            
+            if (incomeSources.length === 0) {
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No income data found. Please complete the income section of the bank questionnaire.</div>';
+                return;
+            }
+            
+            if (Object.keys(categoryTotals).length === 0) {
+                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data found. Please complete the spending section of the bank questionnaire.</div>';
+                return;
+            }
             
             createSankeyChart(incomeSources, categoryTotals, subcategoryTotals);
         }).catch(error => {
