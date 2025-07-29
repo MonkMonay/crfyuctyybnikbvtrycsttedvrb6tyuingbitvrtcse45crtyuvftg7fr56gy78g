@@ -427,7 +427,7 @@
                 .range(d3.schemeCategory10);
             
             // Create links
-            svg.append("g")
+            const linkGroup = svg.append("g")
                 .selectAll("path")
                 .data(sankeyLinks)
                 .join("path")
@@ -435,6 +435,14 @@
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(1, d.width))
+                    .on("mouseover", function(event, d) {
+                        // Show detailed breakdown for this link
+                        showDetailedBreakdown(d, event);
+                    })
+                    .on("mouseout", function(event, d) {
+                        // Hide detailed breakdown
+                        hideDetailedBreakdown();
+                    })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
             
@@ -494,6 +502,90 @@
                 .filter(d => d.x0 < width / 2)
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start");
+            
+            // Function to show detailed breakdown
+            function showDetailedBreakdown(linkData, event) {
+                const targetCategory = linkData.target.name;
+                const categoryTotal = categoryTotals[targetCategory] * 12;
+                
+                // Find all subcategories for this category
+                const subcategories = [];
+                for (const category of spendingCategories) {
+                    if (category.title === targetCategory) {
+                        for (const item of category.items) {
+                            const value = parseFloat(data[item.label]) || 0;
+                            if (value > 0 && item.label !== 'Mortgage Principal') {
+                                subcategories.push({
+                                    name: item.label,
+                                    amount: value * 12
+                                });
+                            }
+                        }
+                        break;
+                    }
+                }
+                
+                // Handle special case for Housing with Mortgage Principal
+                if (targetCategory === 'Housing') {
+                    const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
+                    if (mortgagePrincipal > 0) {
+                        subcategories.push({
+                            name: 'Mortgage Principal',
+                            amount: mortgagePrincipal * 12
+                        });
+                    }
+                }
+                
+                // Handle special case for Savings
+                if (targetCategory === 'Savings') {
+                    const savingsItems = ['Emergency Fund', 'Retirement Savings', 'Investment Accounts', 'College Savings'];
+                    savingsItems.forEach(item => {
+                        const value = parseFloat(data[item]) || 0;
+                        if (value > 0) {
+                            subcategories.push({
+                                name: item,
+                                amount: value * 12
+                            });
+                        }
+                    });
+                }
+                
+                if (subcategories.length > 0) {
+                    // Create detailed breakdown tooltip
+                    const tooltip = d3.select("body").append("div")
+                        .attr("class", "sankey-tooltip")
+                        .style("position", "absolute")
+                        .style("background", "rgba(0, 0, 0, 0.9)")
+                        .style("color", "white")
+                        .style("padding", "10px")
+                        .style("border-radius", "5px")
+                        .style("font-family", "Montserrat, Arial, sans-serif")
+                        .style("font-size", "12px")
+                        .style("pointer-events", "none")
+                        .style("z-index", "1000");
+                    
+                    tooltip.append("div")
+                        .style("font-weight", "bold")
+                        .style("margin-bottom", "5px")
+                        .text(`${targetCategory} Breakdown`);
+                    
+                    subcategories.forEach(sub => {
+                        const percentage = ((sub.amount / categoryTotal) * 100).toFixed(1);
+                        tooltip.append("div")
+                            .style("margin", "2px 0")
+                            .text(`${sub.name}: $${sub.amount.toLocaleString()} (${percentage}%)`);
+                    });
+                    
+                    // Position tooltip near mouse
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 10) + "px");
+                }
+            }
+            
+            // Function to hide detailed breakdown
+            function hideDetailedBreakdown() {
+                d3.selectAll(".sankey-tooltip").remove();
+            }
                 
         } catch (error) {
             console.error('Error creating Sankey chart:', error);
