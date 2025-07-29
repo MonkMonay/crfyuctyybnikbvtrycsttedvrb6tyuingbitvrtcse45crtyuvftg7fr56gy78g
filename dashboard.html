@@ -51,7 +51,7 @@
             <div class="welcome-text" id="welcome"></div>
         </div>
         <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Expenses Summary</h2>
-        <div id="sankey_chart" style="width:100%;max-width:900px;height:400px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
+        <div id="expense_chart" style="width:100%;max-width:900px;margin:0 auto;background:#222;border-radius:16px;padding:20px;min-height:400px;"></div>
     </div>
     <script>
     // Initialize Firebase
@@ -163,11 +163,23 @@
         ]}
     ];
 
+    // Category colors
+    const categoryColors = {
+        'Income': '#4caf50',
+        'Housing': '#2196f3',
+        'Transportation': '#ff9800',
+        'Food & Dining': '#e91e63',
+        'Personal & Health': '#9c27b0',
+        'Entertainment & Lifestyle': '#00bcd4',
+        'Financial Obligations': '#ff5722',
+        'Other': '#607d8b'
+    };
+
     auth.onAuthStateChanged(function(user) {
         if (user) {
             welcome.textContent = `You're logged in as: ${user.email}`;
             userEmail.textContent = user.email;
-            loadSankeyData(user.uid);
+            loadExpenseData(user.uid);
         } else {
             window.location.href = 'login.html';
         }
@@ -176,13 +188,11 @@
         auth.signOut();
     };
 
-    // Load Google Charts
-    google.charts.load('current', {'packages':['sankey']});
-
-    function loadSankeyData(uid) {
+    function loadExpenseData(uid) {
         db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
             if (!doc.exists) {
                 console.log('No spending data found');
+                document.getElementById('expense_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
                 return;
             }
             const data = doc.data();
@@ -232,81 +242,63 @@
             console.log('Subcategory totals:', subcategoryTotals);
             console.log('Total income:', totalIncome);
             
-            // Prepare Sankey data with hierarchical structure
-            const sankeyData = [['From', 'To', 'Amount']];
+            createExpenseChart(categoryTotals, subcategoryTotals, totalIncome);
+        }).catch(error => {
+            console.error('Error loading data:', error);
+            document.getElementById('expense_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
+        });
+    }
+
+    function createExpenseChart(categoryTotals, subcategoryTotals, totalIncome) {
+        const chartContainer = document.getElementById('expense_chart');
+        
+        if (Object.keys(categoryTotals).length === 0) {
+            chartContainer.innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
+            return;
+        }
+
+        let html = '<div style="text-align: center; margin-bottom: 20px;">';
+        html += `<div style="font-size: 24px; color: #4caf50; margin-bottom: 10px;">Total Annual Income: $${totalIncome.toLocaleString()}</div>`;
+        html += '</div>';
+        
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
+        
+        for (const category in categoryTotals) {
+            const categoryTotal = categoryTotals[category];
+            const percentage = ((categoryTotal * 12) / totalIncome * 100).toFixed(1);
+            const color = categoryColors[category] || '#666';
             
-            // Add income flows to main categories
-            for (const category in categoryTotals) {
-                sankeyData.push(['Income', category, categoryTotals[category]]);
-            }
+            html += `<div style="background: #333; border-radius: 10px; padding: 15px; border-left: 4px solid ${color};">`;
+            html += `<div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category}</div>`;
+            html += `<div style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Annual: $${(categoryTotal * 12).toLocaleString()} (${percentage}%)</div>`;
             
-            // Add subcategory flows from their parent categories
+            // Add subcategories
+            html += '<div style="font-size: 12px; color: #999;">';
             for (const subcategory in subcategoryTotals) {
                 // Find which category this subcategory belongs to
-                for (const category of spendingCategories) {
-                    if (category.title === 'Income') continue;
-                    
-                    const found = category.items.find(item => item.label === subcategory);
-                    if (found) {
-                        sankeyData.push([category.title, subcategory, subcategoryTotals[subcategory]]);
+                for (const cat of spendingCategories) {
+                    if (cat.title === category) {
+                        const found = cat.items.find(item => item.label === subcategory);
+                        if (found) {
+                            const subValue = subcategoryTotals[subcategory];
+                            const subPercentage = ((subValue * 12) / totalIncome * 100).toFixed(1);
+                            html += `<div style="margin: 5px 0; padding: 5px; background: #444; border-radius: 5px;">`;
+                            html += `<span style="color: #ccc;">${subcategory}</span>`;
+                            html += `<span style="float: right; color: ${color};">$${(subValue * 12).toLocaleString()} (${subPercentage}%)</span>`;
+                            html += '</div>';
+                        }
                         break;
                     }
                 }
             }
-            
-            console.log('Sankey data:', sankeyData);
-            
-            if (sankeyData.length > 1) {
-                google.charts.setOnLoadCallback(() => drawSankey(sankeyData));
-            } else {
-                console.log('No valid data for Sankey chart');
-                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
-            }
-        }).catch(error => {
-            console.error('Error loading data:', error);
-            document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
-        });
-    }
-
-    function drawSankey(sankeyData) {
-        const data = google.visualization.arrayToDataTable(sankeyData);
-        const chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+            html += '</div>';
+            html += '</div>';
+        }
         
-        // Define colors for different categories
-        const categoryColors = {
-            'Income': '#4caf50',
-            'Housing': '#2196f3',
-            'Transportation': '#ff9800',
-            'Food & Dining': '#e91e63',
-            'Personal & Health': '#9c27b0',
-            'Entertainment & Lifestyle': '#00bcd4',
-            'Financial Obligations': '#ff5722',
-            'Other': '#607d8b'
-        };
+        html += '</div>';
         
-        chart.draw(data, {
-            sankey: {
-                node: { 
-                    label: { 
-                        fontName: 'Montserrat', 
-                        fontSize: 12, 
-                        color: '#fff', 
-                        bold: true 
-                    }, 
-                    color: { fill: '#222' },
-                    nodePadding: 10,
-                    width: 20
-                },
-                link: { 
-                    color: { 
-                        fill: '#FFD700', 
-                        fillOpacity: 0.6 
-                    } 
-                }
-            },
-            backgroundColor: 'transparent'
-        });
+        chartContainer.innerHTML = html;
     }
-    </script>
+</script>
 </body>
 </html> 
