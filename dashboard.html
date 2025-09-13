@@ -712,8 +712,8 @@
         incomeSources.forEach(source => {
             if (nodeNames.has(source.name) && nodeNames.has("Budget")) {
                 const link = {
-                    source: nodes[nodeNameToIndex[source.name]],
-                    target: nodes[nodeNameToIndex["Budget"]],
+                    source: nodeNameToIndex[source.name],
+                    target: nodeNameToIndex["Budget"],
                     value: source.amount
                 };
                 links.push(link);
@@ -725,8 +725,8 @@
         Object.keys(categoryTotals).forEach(category => {
             if (nodeNames.has("Budget") && nodeNames.has(category)) {
                 const link = {
-                    source: nodes[nodeNameToIndex["Budget"]],
-                    target: nodes[nodeNameToIndex[category]],
+                    source: nodeNameToIndex["Budget"],
+                    target: nodeNameToIndex[category],
                     value: categoryTotals[category] * 12
                 };
                 links.push(link);
@@ -735,14 +735,14 @@
         });
         
         console.log('Sankey nodes:', nodes.map(n => n.name));
-        console.log('Sankey links:', links.map(l => `${l.source.name} → ${l.target.name}`));
+        console.log('Sankey links:', links.map(l => `${nodes[l.source]?.name || 'unknown'} → ${nodes[l.target]?.name || 'unknown'}`));
         
         // Validate that all links reference existing nodes
         const validLinks = links.filter(link => {
-            const sourceExists = link.source && nodes.includes(link.source);
-            const targetExists = link.target && nodes.includes(link.target);
+            const sourceExists = link.source >= 0 && link.source < nodes.length;
+            const targetExists = link.target >= 0 && link.target < nodes.length;
             if (!sourceExists || !targetExists) {
-                console.warn(`Removing invalid link: ${link.source?.name || 'unknown'} → ${link.target?.name || 'unknown'}`);
+                console.warn(`Removing invalid link: ${nodes[link.source]?.name || 'unknown'} → ${nodes[link.target]?.name || 'unknown'}`);
                 return false;
             }
             return true;
@@ -806,21 +806,9 @@
                 .data(sankeyLinks)
                 .join("path")
                     .attr("class", "link entering")
-                    .attr("d", d => {
-                        // Use Sankey link generator
-                        const path = d3.sankeyLinkHorizontal()(d);
-                        console.log('Link path for', d.source.name, '->', d.target.name, ':', path);
-                        return path;
-                    })
-                    .attr("stroke", d => {
-                        console.log('Link stroke color for', d.source.name, '->', d.target.name, ':', color(d.source.name));
-                        return color(d.source.name);
-                    })
-                    .attr("stroke-width", d => {
-                        const width = Math.max(3, d.width || 3);
-                        console.log('Link width for', d.source.name, '->', d.target.name, ':', width);
-                        return width;
-                    })
+                    .attr("d", d3.sankeyLinkHorizontal())
+                    .attr("stroke", d => color(d.source.name))
+                    .attr("stroke-width", d => Math.max(3, d.width || 3))
                     .attr("fill", "none")
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
@@ -830,25 +818,10 @@
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
             
             console.log('Created', linkGroup.size(), 'links');
-            
-            // Debug: Add a simple test line to see if rendering works
-            svg.append("line")
-                .attr("x1", 50)
-                .attr("y1", 50)
-                .attr("x2", 200)
-                .attr("y2", 100)
-                .attr("stroke", "red")
-                .attr("stroke-width", 3)
-                .attr("opacity", 0.5);
 
             // Animate links with stagger
             linkGroup.each(function(d, i) {
-                const linkElement = d3.select(this);
-                
-                // Debug: log the link path
-                console.log('Link', i, ':', d.source.name, '->', d.target.name, 'path:', linkElement.attr('d'));
-                
-                linkElement
+                d3.select(this)
                     .transition()
                     .delay(i * 100)
                     .duration(800)
