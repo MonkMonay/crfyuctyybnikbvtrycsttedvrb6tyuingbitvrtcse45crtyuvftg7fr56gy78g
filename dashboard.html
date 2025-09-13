@@ -257,11 +257,7 @@
             <!-- Main Content -->
             <div class="main-content">
                 <h2 style="color:#4caf50;text-align:center;margin-top:40px;">Your Financial Flow</h2>
-                <div class="sankey-container" id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#333;border-radius:20px;padding:20px;">
-                    <div class="loading-overlay" id="loadingOverlay">
-                        <div class="loading-spinner"></div>
-                    </div>
-                </div>
+                <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#333;border-radius:20px;padding:20px;"></div>
             </div>
             
             <!-- Right Sidebar Ads -->
@@ -338,14 +334,14 @@
         .node rect {
             stroke: #333;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             transform-origin: center;
+            will-change: transform, opacity;
         }
         .node rect:hover {
             stroke: #4caf50;
             stroke-width: 2px;
-            transform: scale(1.05);
-            filter: drop-shadow(0 4px 8px rgba(76, 175, 80, 0.3));
+            filter: brightness(1.1);
         }
         .node text {
             pointer-events: none;
@@ -361,21 +357,20 @@
         .link {
             fill: none;
             stroke-opacity: 0.6;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            stroke-dasharray: 0;
+            transition: all 0.3s ease;
+            will-change: stroke-opacity, stroke-width;
         }
         .link:hover {
             stroke-opacity: 0.9;
             stroke-width: 3px;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
         .link.flowing {
-            stroke-dasharray: 10, 5;
+            stroke-dasharray: 5, 5;
             animation: flow 2s linear infinite;
         }
         @keyframes flow {
             0% { stroke-dashoffset: 0; }
-            100% { stroke-dashoffset: 15; }
+            100% { stroke-dashoffset: 20; }
         }
         .node.entering {
             opacity: 0;
@@ -387,40 +382,13 @@
         }
         .link.entering {
             opacity: 0;
-            stroke-dasharray: 0, 1000;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
         }
         .link.entered {
             opacity: 1;
-            stroke-dasharray: 0;
-        }
-        .sankey-container {
-            position: relative;
-            overflow: hidden;
-        }
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(51, 51, 51, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: opacity 0.5s ease;
-        }
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #333;
-            border-top: 4px solid #4caf50;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            stroke-dasharray: none;
+            stroke-dashoffset: 0;
         }
     </style>
     <script>
@@ -676,13 +644,9 @@
 
     function createSankeyChart(incomeSources, categoryTotals, subcategoryTotals) {
         const chartContainer = document.getElementById('sankey_chart');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        
-        // Show loading overlay
-        loadingOverlay.style.display = 'flex';
         
         // Clear previous chart
-        chartContainer.innerHTML = '<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>';
+        chartContainer.innerHTML = '';
         
         // Prepare data for D3 Sankey
         const nodes = [];
@@ -759,17 +723,10 @@
         const width = chartContainer.clientWidth - 40; // Account for padding
         const height = chartContainer.clientHeight - 40; // Use container height instead of fixed height
         
-        // Clear and recreate the container
-        chartContainer.innerHTML = '';
-        
-        const svg = d3.select(chartContainer)
+        const svg = d3.select("#sankey_chart")
             .append("svg")
             .attr("width", width)
-            .attr("height", height)
-            .style("opacity", 0)
-            .transition()
-            .duration(500)
-            .style("opacity", 1);
+            .attr("height", height);
         
         const sankey = d3.sankey()
             .nodeWidth(20)
@@ -788,7 +745,7 @@
                 .domain(nodes.map(d => d.name))
                 .range(d3.schemeCategory10);
             
-            // Create links with staggered animation
+            // Create links with smooth animation
             const linkGroup = svg.append("g")
                 .selectAll("path")
                 .data(sankeyLinks)
@@ -797,55 +754,66 @@
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(1, d.width))
-                    .style("opacity", 0)
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
                         toggleDetailedBreakdown(d, event, window.sankeyData);
                     })
+                    .on("mouseover", function(event, d) {
+                        // Add flowing animation on hover
+                        d3.select(this).classed("flowing", true);
+                    })
+                    .on("mouseout", function(event, d) {
+                        // Remove flowing animation on mouseout
+                        d3.select(this).classed("flowing", false);
+                    })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
-
-            // Animate links in with staggered timing
-            linkGroup
-                .transition()
-                .delay((d, i) => i * 100)
-                .duration(800)
-                .ease(d3.easeCubicInOut)
-                .style("opacity", 0.6)
-                .attr("class", "link entered")
-                .on("end", function() {
-                    // Add flowing animation to links after they're drawn
-                    d3.select(this).classed("flowing", true);
-                });
             
-            // Create nodes with staggered animation
+            // Animate links entrance
+            linkGroup.transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
+                .attr("class", "link entered")
+                .style("opacity", 1);
+            
+            // Create nodes with smooth animation
             const node = svg.append("g")
                 .selectAll("g")
                 .data(sankeyNodes)
                 .join("g")
                     .attr("class", "node entering")
-                    .style("opacity", 0)
-                    .style("transform", "scale(0.8)");
+                    .style("opacity", 0);
             
             node.append("rect")
                 .attr("x", d => d.x0)
                 .attr("y", d => d.y0)
                 .attr("height", d => d.y1 - d.y0)
                 .attr("width", d => d.x1 - d.x0)
-                .attr("fill", d => color(d.name));
-
-            // Animate nodes in with staggered timing
-            node
-                .transition()
-                .delay((d, i) => i * 150 + 200) // Start after links begin
-                .duration(600)
-                .ease(d3.easeElasticOut)
-                .style("opacity", 1)
-                .style("transform", "scale(1)")
-                .attr("class", "node entered");
+                .attr("fill", d => color(d.name))
+                .on("mouseover", function(event, d) {
+                    // Highlight related links with smooth transition
+                    linkGroup.transition()
+                        .duration(200)
+                        .style("opacity", link => 
+                            link.source.name === d.name || link.target.name === d.name ? 1 : 0.3
+                        );
+                })
+                .on("mouseout", function(event, d) {
+                    // Reset all links opacity with smooth transition
+                    linkGroup.transition()
+                        .duration(200)
+                        .style("opacity", 1);
+                });
             
-            // Add node labels with animation
-            const labels = node.append("text")
+            // Animate nodes entrance with staggered delay
+            node.transition()
+                .duration(600)
+                .delay((d, i) => i * 150)
+                .attr("class", "node entered")
+                .style("opacity", 1);
+            
+            // Add node labels with smooth animation
+            const nodeLabels = node.append("text")
                 .attr("x", d => d.x0 - 6)
                 .attr("y", d => (d.y1 + d.y0) / 2 - 8)
                 .attr("dy", "0.35em")
@@ -855,13 +823,11 @@
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start")
                 .style("opacity", 0);
-
-            // Animate labels in
-            labels
-                .transition()
-                .delay((d, i) => i * 150 + 400) // Start after nodes
+            
+            // Animate text labels entrance
+            nodeLabels.transition()
                 .duration(400)
-                .ease(d3.easeCubicInOut)
+                .delay((d, i) => i * 150 + 300)
                 .style("opacity", 1);
             
             // Add amount labels under the node names with animation
@@ -896,23 +862,12 @@
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start")
                 .style("opacity", 0);
-
-            // Animate amount labels in with counter effect
-            amountLabels
-                .transition()
-                .delay((d, i) => i * 150 + 600) // Start after other elements
-                .duration(500)
-                .ease(d3.easeCubicInOut)
-                .style("opacity", 1)
-                .tween("text", function(d) {
-                    const element = d3.select(this);
-                    const text = element.text();
-                    const value = parseFloat(text.replace(/[$,]/g, '')) || 0;
-                    const i = d3.interpolate(0, value);
-                    return function(t) {
-                        element.text(`$${Math.round(i(t)).toLocaleString()}`);
-                    };
-                });
+            
+            // Animate amount labels entrance
+            amountLabels.transition()
+                .duration(400)
+                .delay((d, i) => i * 150 + 500)
+                .style("opacity", 1);
             
             // Function to toggle detailed breakdown
             function toggleDetailedBreakdown(linkData, event) {
@@ -1034,19 +989,8 @@
             
             // Function to update the Sankey visualization with smooth transitions
             function updateSankeyVisualization(sankeyNodes, sankeyLinks, colorScale) {
-                // Get the current SVG or recreate it
-                let currentSvg = d3.select("#sankey_chart svg");
-                if (currentSvg.empty()) {
-                    const width = chartContainer.clientWidth - 40;
-                    const height = chartContainer.clientHeight - 40;
-                    currentSvg = d3.select("#sankey_chart")
-                        .append("svg")
-                        .attr("width", width)
-                        .attr("height", height);
-                }
-                
                 // Fade out existing visualization
-                currentSvg.selectAll("*")
+                svg.selectAll("*")
                     .transition()
                     .duration(300)
                     .style("opacity", 0)
@@ -1054,8 +998,8 @@
                 
                 // Wait for fade out to complete, then recreate
                 setTimeout(() => {
-                    // Recreate links with animation
-                    const linkGroup = currentSvg.append("g")
+                    // Recreate links with smooth animation
+                    const linkGroup = svg.append("g")
                         .selectAll("path")
                         .data(sankeyLinks)
                         .join("path")
@@ -1063,54 +1007,66 @@
                             .attr("d", d3.sankeyLinkHorizontal())
                             .attr("stroke", d => colorScale(d.source.name))
                             .attr("stroke-width", d => Math.max(1, d.width))
-                            .style("opacity", 0)
                             .on("click", function(event, d) {
                                 // Toggle detailed breakdown for this link
                                 toggleDetailedBreakdown(d, event, window.sankeyData);
                             })
+                            .on("mouseover", function(event, d) {
+                                // Add flowing animation on hover
+                                d3.select(this).classed("flowing", true);
+                            })
+                            .on("mouseout", function(event, d) {
+                                // Remove flowing animation on mouseout
+                                d3.select(this).classed("flowing", false);
+                            })
                             .append("title")
                             .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
-
-                    // Animate links in
-                    linkGroup
-                        .transition()
-                        .delay((d, i) => i * 50)
-                        .duration(600)
-                        .ease(d3.easeCubicInOut)
-                        .style("opacity", 0.6)
-                        .attr("class", "link entered")
-                        .on("end", function() {
-                            d3.select(this).classed("flowing", true);
-                        });
                     
-                    // Recreate nodes with animation
-                    const node = currentSvg.append("g")
+                    // Animate links entrance
+                    linkGroup.transition()
+                        .duration(600)
+                        .delay((d, i) => i * 80)
+                        .attr("class", "link entered")
+                        .style("opacity", 1);
+                    
+                    // Recreate nodes with smooth animation
+                    const node = svg.append("g")
                         .selectAll("g")
                         .data(sankeyNodes)
                         .join("g")
                             .attr("class", "node entering")
-                            .style("opacity", 0)
-                            .style("transform", "scale(0.8)");
+                            .style("opacity", 0);
                     
                     node.append("rect")
                         .attr("x", d => d.x0)
                         .attr("y", d => d.y0)
                         .attr("height", d => d.y1 - d.y0)
                         .attr("width", d => d.x1 - d.x0)
-                        .attr("fill", d => colorScale(d.name));
-
-                    // Animate nodes in
-                    node
-                        .transition()
-                        .delay((d, i) => i * 100 + 200)
+                        .attr("fill", d => colorScale(d.name))
+                        .on("mouseover", function(event, d) {
+                            // Highlight related links with smooth transition
+                            linkGroup.transition()
+                                .duration(200)
+                                .style("opacity", link => 
+                                    link.source.name === d.name || link.target.name === d.name ? 1 : 0.3
+                                );
+                        })
+                        .on("mouseout", function(event, d) {
+                            // Reset all links opacity with smooth transition
+                            linkGroup.transition()
+                                .duration(200)
+                                .style("opacity", 1);
+                        });
+                    
+                    // Animate nodes entrance with staggered delay
+                    node.transition()
                         .duration(500)
-                        .ease(d3.easeElasticOut)
-                        .style("opacity", 1)
-                        .style("transform", "scale(1)")
-                        .attr("class", "node entered");
-                
-                    // Add node labels with animation
-                    const labels = node.append("text")
+                        .delay((d, i) => i * 100)
+                        .attr("class", "node entered")
+                        .style("opacity", 1);
+                    
+                    // Add node labels with smooth animation
+                    const nodeLabels = node.append("text")
                         .attr("x", d => d.x0 - 6)
                         .attr("y", d => (d.y1 + d.y0) / 2 - 8)
                         .attr("dy", "0.35em")
@@ -1120,16 +1076,14 @@
                         .attr("x", d => d.x1 + 6)
                         .attr("text-anchor", "start")
                         .style("opacity", 0);
-
-                    // Animate labels in
-                    labels
-                        .transition()
-                        .delay((d, i) => i * 100 + 400)
+                    
+                    // Animate text labels entrance
+                    nodeLabels.transition()
                         .duration(400)
-                        .ease(d3.easeCubicInOut)
+                        .delay((d, i) => i * 100 + 200)
                         .style("opacity", 1);
                     
-                    // Add amount labels under the node names with animation
+                    // Add amount labels with animation
                     const amountLabels = node.append("text")
                         .attr("x", d => d.x0 - 6)
                         .attr("y", d => (d.y1 + d.y0) / 2 + 8)
@@ -1161,24 +1115,13 @@
                         .attr("x", d => d.x1 + 6)
                         .attr("text-anchor", "start")
                         .style("opacity", 0);
-
-                    // Animate amount labels in with counter effect
-                    amountLabels
-                        .transition()
-                        .delay((d, i) => i * 100 + 600)
-                        .duration(500)
-                        .ease(d3.easeCubicInOut)
-                        .style("opacity", 1)
-                        .tween("text", function(d) {
-                            const element = d3.select(this);
-                            const text = element.text();
-                            const value = parseFloat(text.replace(/[$,]/g, '')) || 0;
-                            const i = d3.interpolate(0, value);
-                            return function(t) {
-                                element.text(`$${Math.round(i(t)).toLocaleString()}`);
-                            };
-                        });
-                }, 350); // Wait for fade out to complete
+                    
+                    // Animate amount labels entrance
+                    amountLabels.transition()
+                        .duration(400)
+                        .delay((d, i) => i * 100 + 400)
+                        .style("opacity", 1);
+                }, 300);
             }
                 
         } catch (error) {
