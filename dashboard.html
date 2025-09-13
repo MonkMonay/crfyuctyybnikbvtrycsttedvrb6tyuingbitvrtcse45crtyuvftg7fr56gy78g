@@ -334,19 +334,82 @@
         .node rect {
             stroke: #333;
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            will-change: transform, filter;
+        }
+        .node rect:hover {
+            stroke: #4caf50;
+            stroke-width: 2px;
+            transform: scale(1.05);
+            filter: drop-shadow(0 4px 8px rgba(76, 175, 80, 0.3));
         }
         .node text {
             pointer-events: none;
             font-size: 12px;
             font-family: 'Montserrat', Arial, sans-serif;
             fill: #fff;
+            transition: all 0.3s ease;
+        }
+        .node:hover text {
+            fill: #4caf50;
+            font-weight: 600;
         }
         .link {
             fill: none;
             stroke-opacity: 0.6;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            stroke-dasharray: 0;
+            will-change: stroke-opacity, stroke-width, filter;
         }
         .link:hover {
             stroke-opacity: 0.9;
+            stroke-width: 3px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        .link.flowing {
+            stroke-dasharray: 5, 5;
+            animation: flow 2s linear infinite;
+        }
+        @keyframes flow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 10; }
+        }
+        .node.entering {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .node.entered {
+            opacity: 1;
+            transform: scale(1);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .link.entering {
+            opacity: 0;
+            stroke-dasharray: 0, 1000;
+        }
+        .link.entered {
+            opacity: 1;
+            stroke-dasharray: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .node.pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .value-counter {
+            font-weight: bold;
+            transition: all 0.5s ease;
+        }
+        .value-counter.animating {
+            animation: countUp 1s ease-out;
+        }
+        @keyframes countUp {
+            0% { transform: scale(0.8); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
     <script>
@@ -703,12 +766,12 @@
                 .domain(nodes.map(d => d.name))
                 .range(d3.schemeCategory10);
             
-            // Create links
+            // Create links with staggered animation
             const linkGroup = svg.append("g")
                 .selectAll("path")
                 .data(sankeyLinks)
                 .join("path")
-                    .attr("class", "link")
+                    .attr("class", "link entering")
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(1, d.width))
@@ -718,13 +781,42 @@
                     })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+
+            // Animate links with stagger
+            linkGroup.each(function(d, i) {
+                d3.select(this)
+                    .transition()
+                    .delay(i * 100)
+                    .duration(800)
+                    .attr("class", "link entered")
+                    .on("end", function() {
+                        // Add flowing animation to important links
+                        if (d.source.name === "Budget" || d.target.name === "Budget") {
+                            d3.select(this).classed("flowing", true);
+                        }
+                    });
+            });
             
-            // Create nodes
+            // Add periodic flowing animation to all links
+            setInterval(() => {
+                svg.selectAll(".link.entered")
+                    .classed("flowing", false)
+                    .transition()
+                    .delay(1000)
+                    .duration(0)
+                    .each(function() {
+                        if (Math.random() > 0.8) {
+                            d3.select(this).classed("flowing", true);
+                        }
+                    });
+            }, 5000);
+            
+            // Create nodes with staggered animation
             const node = svg.append("g")
                 .selectAll("g")
                 .data(sankeyNodes)
                 .join("g")
-                    .attr("class", "node");
+                    .attr("class", "node entering");
             
             node.append("rect")
                 .attr("x", d => d.x0)
@@ -732,6 +824,21 @@
                 .attr("height", d => d.y1 - d.y0)
                 .attr("width", d => d.x1 - d.x0)
                 .attr("fill", d => color(d.name));
+
+            // Animate nodes with stagger
+            node.each(function(d, i) {
+                d3.select(this)
+                    .transition()
+                    .delay(i * 150 + 200) // Start after links begin
+                    .duration(600)
+                    .attr("class", "node entered")
+                    .on("end", function() {
+                        // Add subtle pulse to important nodes
+                        if (d.name === "Budget" || d.name.includes("Income")) {
+                            d3.select(this).classed("pulsing", true);
+                        }
+                    });
+            });
             
             // Add node labels
             node.append("text")
@@ -744,37 +851,50 @@
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start");
             
-            // Add amount labels under the node names
-            node.append("text")
+            // Add amount labels under the node names with animation
+            const valueLabels = node.append("text")
                 .attr("x", d => d.x0 - 6)
                 .attr("y", d => (d.y1 + d.y0) / 2 + 8)
                 .attr("dy", "0.35em")
                 .attr("text-anchor", "end")
                 .attr("font-size", "10px")
                 .attr("fill", "#ccc")
-                .text(d => {
-                    // Calculate the total value for this node
-                    let totalValue = 0;
-                    
-                    // For income sources, use the original amount
-                    if (incomeSources.some(source => source.name === d.name)) {
-                        const source = incomeSources.find(source => source.name === d.name);
-                        totalValue = source ? source.amount : 0;
-                    }
-                    // For categories, use the category total
-                    else if (categoryTotals[d.name]) {
-                        totalValue = categoryTotals[d.name] * 12;
-                    }
-                    // For budget node, use total income
-                    else if (d.name === "Budget") {
-                        totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-                    }
-                    
-                    return totalValue > 0 ? `$${totalValue.toLocaleString()}` : '';
-                })
+                .attr("class", "value-counter")
+                .text("")
                 .filter(d => d.x0 < width / 2)
                 .attr("x", d => d.x1 + 6)
                 .attr("text-anchor", "start");
+
+            // Animate value counters
+            valueLabels.each(function(d, i) {
+                const element = d3.select(this);
+                let totalValue = 0;
+                
+                // Calculate the total value for this node
+                if (incomeSources.some(source => source.name === d.name)) {
+                    const source = incomeSources.find(source => source.name === d.name);
+                    totalValue = source ? source.amount : 0;
+                } else if (categoryTotals[d.name]) {
+                    totalValue = categoryTotals[d.name] * 12;
+                } else if (d.name === "Budget") {
+                    totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+                }
+                
+                if (totalValue > 0) {
+                    // Animate the counter
+                    element.transition()
+                        .delay(i * 150 + 800) // Start after nodes appear
+                        .duration(1000)
+                        .tween("text", function() {
+                            const interpolator = d3.interpolateNumber(0, totalValue);
+                            return function(t) {
+                                const currentValue = interpolator(t);
+                                element.text(`$${Math.round(currentValue).toLocaleString()}`)
+                                    .classed("animating", t < 0.1);
+                            };
+                        });
+                }
+            });
             
             // Function to toggle detailed breakdown
             function toggleDetailedBreakdown(linkData, event) {
@@ -894,43 +1014,105 @@
                 updateSankeyVisualization(originalNodes, originalLinks, color);
             }
             
-            // Function to update the Sankey visualization
+            // Function to update the Sankey visualization with smooth transitions
             function updateSankeyVisualization(sankeyNodes, sankeyLinks, colorScale) {
-                // Clear existing visualization
-                svg.selectAll("*").remove();
+                // Store current positions for smooth transitions
+                const currentNodes = svg.selectAll(".node").data();
+                const currentLinks = svg.selectAll(".link").data();
                 
-                // Recreate links
-                svg.append("g")
-                    .selectAll("path")
-                    .data(sankeyLinks)
-                    .join("path")
-                        .attr("class", "link")
-                        .attr("d", d3.sankeyLinkHorizontal())
-                        .attr("stroke", d => colorScale(d.source.name))
-                        .attr("stroke-width", d => Math.max(1, d.width))
-                        .on("click", function(event, d) {
-                            // Toggle detailed breakdown for this link
-                            toggleDetailedBreakdown(d, event, window.sankeyData);
-                        })
-                        .append("title")
-                        .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+                // Create position mapping for smooth transitions
+                const nodePositions = new Map();
+                currentNodes.forEach(d => {
+                    nodePositions.set(d.name, { x0: d.x0, x1: d.x1, y0: d.y0, y1: d.y1 });
+                });
                 
-                // Recreate nodes
-                const node = svg.append("g")
-                    .selectAll("g")
-                    .data(sankeyNodes)
-                    .join("g")
-                        .attr("class", "node");
+                // Update links with smooth transition
+                const linkGroup = svg.selectAll(".link")
+                    .data(sankeyLinks, d => `${d.source.name}-${d.target.name}`);
                 
-                node.append("rect")
+                linkGroup.exit()
+                    .transition()
+                    .duration(400)
+                    .style("opacity", 0)
+                    .remove();
+                
+                const linkEnter = linkGroup.enter()
+                    .append("path")
+                    .attr("class", "link entering")
+                    .attr("d", d => {
+                        const source = nodePositions.get(d.source.name);
+                        const target = nodePositions.get(d.target.name);
+                        if (source && target) {
+                            return `M${source.x1},${(source.y0 + source.y1) / 2}L${target.x0},${(target.y0 + target.y1) / 2}`;
+                        }
+                        return d3.sankeyLinkHorizontal()(d);
+                    })
+                    .attr("stroke", d => colorScale(d.source.name))
+                    .attr("stroke-width", d => Math.max(1, d.width))
+                    .on("click", function(event, d) {
+                        toggleDetailedBreakdown(d, event, window.sankeyData);
+                    })
+                    .append("title")
+                    .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
+                
+                linkGroup.merge(linkEnter)
+                    .transition()
+                    .duration(600)
+                    .attr("class", "link entered")
+                    .attr("d", d3.sankeyLinkHorizontal())
+                    .attr("stroke", d => colorScale(d.source.name))
+                    .attr("stroke-width", d => Math.max(1, d.width));
+                
+                // Update nodes with smooth transition
+                const nodeGroup = svg.selectAll(".node")
+                    .data(sankeyNodes, d => d.name);
+                
+                nodeGroup.exit()
+                    .transition()
+                    .duration(400)
+                    .style("opacity", 0)
+                    .style("transform", "scale(0.8)")
+                    .remove();
+                
+                const nodeEnter = nodeGroup.enter()
+                    .append("g")
+                    .attr("class", "node entering")
+                    .style("opacity", 0)
+                    .style("transform", "scale(0.8)");
+                
+                nodeEnter.append("rect")
                     .attr("x", d => d.x0)
                     .attr("y", d => d.y0)
                     .attr("height", d => d.y1 - d.y0)
                     .attr("width", d => d.x1 - d.x0)
                     .attr("fill", d => colorScale(d.name));
                 
-                // Add node labels
-                node.append("text")
+                // Animate all nodes
+                nodeGroup.merge(nodeEnter)
+                    .transition()
+                    .duration(600)
+                    .style("opacity", 1)
+                    .style("transform", "scale(1)")
+                    .attr("class", "node entered");
+                
+                // Update node positions
+                nodeGroup.select("rect")
+                    .transition()
+                    .duration(600)
+                    .attr("x", d => d.x0)
+                    .attr("y", d => d.y0)
+                    .attr("height", d => d.y1 - d.y0)
+                    .attr("width", d => d.x1 - d.x0)
+                    .attr("fill", d => colorScale(d.name));
+                
+                // Add node labels with animation
+                const nodeLabels = nodeGroup.selectAll("text")
+                    .data(d => [d]);
+                
+                nodeLabels.exit().remove();
+                
+                const nodeLabelsEnter = nodeLabels.enter()
+                    .append("text")
                     .attr("x", d => d.x0 - 6)
                     .attr("y", d => (d.y1 + d.y0) / 2 - 8)
                     .attr("dy", "0.35em")
@@ -940,37 +1122,67 @@
                     .attr("x", d => d.x1 + 6)
                     .attr("text-anchor", "start");
                 
-                // Add amount labels under the node names
-                node.append("text")
+                nodeLabels.merge(nodeLabelsEnter)
+                    .transition()
+                    .duration(600)
+                    .attr("x", d => d.x0 - 6)
+                    .attr("y", d => (d.y1 + d.y0) / 2 - 8)
+                    .filter(d => d.x0 < width / 2)
+                    .attr("x", d => d.x1 + 6);
+                
+                // Add value labels with animation
+                const valueLabels = nodeGroup.selectAll(".value-counter")
+                    .data(d => [d]);
+                
+                valueLabels.exit().remove();
+                
+                const valueLabelsEnter = valueLabels.enter()
+                    .append("text")
+                    .attr("class", "value-counter")
                     .attr("x", d => d.x0 - 6)
                     .attr("y", d => (d.y1 + d.y0) / 2 + 8)
                     .attr("dy", "0.35em")
                     .attr("text-anchor", "end")
                     .attr("font-size", "10px")
                     .attr("fill", "#ccc")
-                    .text(d => {
-                        let totalValue = 0;
-                        
-                        if (incomeSources.some(source => source.name === d.name)) {
-                            const source = incomeSources.find(source => source.name === d.name);
-                            totalValue = source ? source.amount : 0;
-                        } else if (categoryTotals[d.name]) {
-                            totalValue = categoryTotals[d.name] * 12;
-                        } else if (d.name === "Budget") {
-                            totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-                        } else {
-                            // For subcategories, find their value
-                            const subcategoryValue = subcategoryTotals[d.name];
-                            if (subcategoryValue) {
-                                totalValue = subcategoryValue * 12;
-                            }
-                        }
-                        
-                        return totalValue > 0 ? `$${totalValue.toLocaleString()}` : '';
-                    })
+                    .text("")
                     .filter(d => d.x0 < width / 2)
                     .attr("x", d => d.x1 + 6)
                     .attr("text-anchor", "start");
+                
+                // Animate value counters
+                valueLabelsEnter.each(function(d, i) {
+                    const element = d3.select(this);
+                    let totalValue = 0;
+                    
+                    if (incomeSources.some(source => source.name === d.name)) {
+                        const source = incomeSources.find(source => source.name === d.name);
+                        totalValue = source ? source.amount : 0;
+                    } else if (categoryTotals[d.name]) {
+                        totalValue = categoryTotals[d.name] * 12;
+                    } else if (d.name === "Budget") {
+                        totalValue = incomeSources.reduce((sum, source) => sum + source.amount, 0);
+                    } else {
+                        const subcategoryValue = subcategoryTotals[d.name];
+                        if (subcategoryValue) {
+                            totalValue = subcategoryValue * 12;
+                        }
+                    }
+                    
+                    if (totalValue > 0) {
+                        element.transition()
+                            .delay(300)
+                            .duration(800)
+                            .tween("text", function() {
+                                const interpolator = d3.interpolateNumber(0, totalValue);
+                                return function(t) {
+                                    const currentValue = interpolator(t);
+                                    element.text(`$${Math.round(currentValue).toLocaleString()}`)
+                                        .classed("animating", t < 0.1);
+                                };
+                            });
+                    }
+                });
             }
                 
         } catch (error) {
