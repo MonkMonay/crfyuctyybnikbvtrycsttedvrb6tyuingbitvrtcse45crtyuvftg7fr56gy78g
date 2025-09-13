@@ -356,7 +356,7 @@
         }
         .link {
             fill: none;
-            stroke-opacity: 0.6;
+            stroke-opacity: 0.8;
             transition: all 0.3s ease;
             will-change: stroke-opacity, stroke-width;
         }
@@ -389,6 +389,9 @@
             opacity: 1;
             stroke-dasharray: none;
             stroke-dashoffset: 0;
+        }
+        .link {
+            opacity: 1;
         }
     </style>
     <script>
@@ -753,7 +756,7 @@
                     .attr("class", "link entering")
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
-                    .attr("stroke-width", d => Math.max(1, d.width))
+                    .attr("stroke-width", d => Math.max(2, d.width))
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
                         toggleDetailedBreakdown(d, event, window.sankeyData);
@@ -1006,7 +1009,7 @@
                             .attr("class", "link entering")
                             .attr("d", d3.sankeyLinkHorizontal())
                             .attr("stroke", d => colorScale(d.source.name))
-                            .attr("stroke-width", d => Math.max(1, d.width))
+                            .attr("stroke-width", d => Math.max(2, d.width))
                             .on("click", function(event, d) {
                                 // Toggle detailed breakdown for this link
                                 toggleDetailedBreakdown(d, event, window.sankeyData);
