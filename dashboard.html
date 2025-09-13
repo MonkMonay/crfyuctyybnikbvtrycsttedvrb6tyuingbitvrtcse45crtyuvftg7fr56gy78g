@@ -357,11 +357,10 @@
         }
         .link {
             fill: none;
-            stroke-opacity: 0.8;
+            stroke-opacity: 0.6;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             stroke-dasharray: 0;
             will-change: stroke-opacity, stroke-width, filter;
-            stroke-linecap: round;
         }
         .link:hover {
             stroke-opacity: 0.9;
@@ -677,27 +676,17 @@
         
         // Add income source nodes
         incomeSources.forEach(source => {
-            nodes.push({ 
-                name: source.name,
-                value: source.amount
-            });
+            nodes.push({ name: source.name });
             nodeNames.add(source.name);
         });
         
         // Add budget node
-        const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-        nodes.push({ 
-            name: "Budget",
-            value: totalIncome
-        });
+        nodes.push({ name: "Budget" });
         nodeNames.add("Budget");
         
         // Add category nodes (only main categories, no subcategories)
         Object.keys(categoryTotals).forEach(category => {
-            nodes.push({ 
-                name: category,
-                value: categoryTotals[category] * 12
-            });
+            nodes.push({ name: category });
             nodeNames.add(category);
         });
         
@@ -711,31 +700,27 @@
         const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
         incomeSources.forEach(source => {
             if (nodeNames.has(source.name) && nodeNames.has("Budget")) {
-                const link = {
+                links.push({
                     source: nodeNameToIndex[source.name],
                     target: nodeNameToIndex["Budget"],
                     value: source.amount
-                };
-                links.push(link);
-                console.log('Added income link:', source.name, '-> Budget, value:', source.amount);
+                });
             }
         });
         
         // Create links from budget to categories
         Object.keys(categoryTotals).forEach(category => {
             if (nodeNames.has("Budget") && nodeNames.has(category)) {
-                const link = {
+                links.push({
                     source: nodeNameToIndex["Budget"],
                     target: nodeNameToIndex[category],
                     value: categoryTotals[category] * 12
-                };
-                links.push(link);
-                console.log('Added category link: Budget ->', category, 'value:', categoryTotals[category] * 12);
+                });
             }
         });
         
         console.log('Sankey nodes:', nodes.map(n => n.name));
-        console.log('Sankey links:', links.map(l => `${nodes[l.source]?.name || 'unknown'} → ${nodes[l.target]?.name || 'unknown'}`));
+        console.log('Sankey links:', links.map(l => `${nodes[l.source].name} → ${nodes[l.target].name}`));
         
         // Validate that all links reference existing nodes
         const validLinks = links.filter(link => {
@@ -769,32 +754,13 @@
             .nodePadding(40)
             .extent([[1, 1], [width - 1, height - 1]]);
         
-        console.log('Sankey extent:', [1, 1], [width - 1, height - 1]);
-        console.log('Chart dimensions:', width, 'x', height);
-        
         try {
             console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
-            console.log('Nodes:', nodes);
-            console.log('Valid links:', validLinks);
             
             const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
                 nodes: nodes,
                 links: validLinks
             });
-            
-            console.log('Sankey nodes after layout:', sankeyNodes.map(n => ({
-                name: n.name,
-                x0: n.x0,
-                x1: n.x1,
-                y0: n.y0,
-                y1: n.y1
-            })));
-            console.log('Sankey links after layout:', sankeyLinks.map(l => ({
-                source: l.source.name,
-                target: l.target.name,
-                value: l.value,
-                width: l.width
-            })));
             
             const color = d3.scaleOrdinal()
                 .domain(nodes.map(d => d.name))
@@ -808,16 +774,13 @@
                     .attr("class", "link entering")
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
-                    .attr("stroke-width", d => Math.max(3, d.width || 3))
-                    .attr("fill", "none")
+                    .attr("stroke-width", d => Math.max(1, d.width))
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
                         toggleDetailedBreakdown(d, event, window.sankeyData);
                     })
                     .append("title")
                     .text(d => `${d.source.name} → ${d.target.name}\n$${d.value.toLocaleString()}`);
-            
-            console.log('Created', linkGroup.size(), 'links');
 
             // Animate links with stagger
             linkGroup.each(function(d, i) {
@@ -1085,7 +1048,7 @@
                         return d3.sankeyLinkHorizontal()(d);
                     })
                     .attr("stroke", d => colorScale(d.source.name))
-                    .attr("stroke-width", d => Math.max(3, d.width || 3))
+                    .attr("stroke-width", d => Math.max(1, d.width))
                     .on("click", function(event, d) {
                         toggleDetailedBreakdown(d, event, window.sankeyData);
                     })
@@ -1098,7 +1061,7 @@
                     .attr("class", "link entered")
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => colorScale(d.source.name))
-                    .attr("stroke-width", d => Math.max(3, d.width || 3));
+                    .attr("stroke-width", d => Math.max(1, d.width));
                 
                 // Update nodes with smooth transition
                 const nodeGroup = svg.selectAll(".node")
