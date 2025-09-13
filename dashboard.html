@@ -381,7 +381,7 @@
             transform: scale(1);
         }
         .link.entering {
-            opacity: 0;
+            opacity: 0.8;
             stroke-dasharray: 1000;
             stroke-dashoffset: 1000;
         }
@@ -389,9 +389,6 @@
             opacity: 1;
             stroke-dasharray: none;
             stroke-dashoffset: 0;
-        }
-        .link {
-            opacity: 1;
         }
     </style>
     <script>
@@ -757,6 +754,7 @@
                     .attr("d", d3.sankeyLinkHorizontal())
                     .attr("stroke", d => color(d.source.name))
                     .attr("stroke-width", d => Math.max(2, d.width))
+                    .attr("stroke-opacity", 0.8)
                     .on("click", function(event, d) {
                         // Toggle detailed breakdown for this link
                         toggleDetailedBreakdown(d, event, window.sankeyData);
@@ -777,7 +775,8 @@
                 .duration(800)
                 .delay((d, i) => i * 100)
                 .attr("class", "link entered")
-                .style("opacity", 1);
+                .style("opacity", 1)
+                .style("stroke-opacity", 0.8);
             
             // Create nodes with smooth animation
             const node = svg.append("g")
@@ -1010,6 +1009,7 @@
                             .attr("d", d3.sankeyLinkHorizontal())
                             .attr("stroke", d => colorScale(d.source.name))
                             .attr("stroke-width", d => Math.max(2, d.width))
+                            .attr("stroke-opacity", 0.8)
                             .on("click", function(event, d) {
                                 // Toggle detailed breakdown for this link
                                 toggleDetailedBreakdown(d, event, window.sankeyData);
@@ -1030,7 +1030,8 @@
                         .duration(600)
                         .delay((d, i) => i * 80)
                         .attr("class", "link entered")
-                        .style("opacity", 1);
+                        .style("opacity", 1)
+                        .style("stroke-opacity", 0.8);
                     
                     // Recreate nodes with smooth animation
                     const node = svg.append("g")
