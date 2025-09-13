@@ -762,7 +762,7 @@
         // Clear and recreate the container
         chartContainer.innerHTML = '';
         
-        const svg = d3.select("#sankey_chart")
+        const svg = d3.select(chartContainer)
             .append("svg")
             .attr("width", width)
             .attr("height", height)
@@ -1034,8 +1034,19 @@
             
             // Function to update the Sankey visualization with smooth transitions
             function updateSankeyVisualization(sankeyNodes, sankeyLinks, colorScale) {
+                // Get the current SVG or recreate it
+                let currentSvg = d3.select("#sankey_chart svg");
+                if (currentSvg.empty()) {
+                    const width = chartContainer.clientWidth - 40;
+                    const height = chartContainer.clientHeight - 40;
+                    currentSvg = d3.select("#sankey_chart")
+                        .append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+                }
+                
                 // Fade out existing visualization
-                svg.selectAll("*")
+                currentSvg.selectAll("*")
                     .transition()
                     .duration(300)
                     .style("opacity", 0)
@@ -1044,7 +1055,7 @@
                 // Wait for fade out to complete, then recreate
                 setTimeout(() => {
                     // Recreate links with animation
-                    const linkGroup = svg.append("g")
+                    const linkGroup = currentSvg.append("g")
                         .selectAll("path")
                         .data(sankeyLinks)
                         .join("path")
@@ -1073,7 +1084,7 @@
                         });
                     
                     // Recreate nodes with animation
-                    const node = svg.append("g")
+                    const node = currentSvg.append("g")
                         .selectAll("g")
                         .data(sankeyNodes)
                         .join("g")
