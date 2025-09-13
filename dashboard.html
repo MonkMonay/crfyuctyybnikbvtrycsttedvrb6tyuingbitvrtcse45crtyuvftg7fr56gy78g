@@ -19,7 +19,7 @@
         
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: #111;
             min-height: 100vh;
             color: white;
         }
@@ -31,20 +31,53 @@
         }
         
         .header {
+            background: #222;
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border-radius: 0 0 20px 20px;
         }
         
         .logo {
-            font-size: 28px;
-            font-weight: 700;
-            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-item {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 15px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: #333;
+            color: #fff;
+        }
+        
+        .nav-item.active {
+            background: #4caf50;
+            color: #fff;
+        }
+        
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .profile-email {
+            color: #ccc;
         }
         
         .user-info {
@@ -59,26 +92,24 @@
         }
         
         .logout-btn {
-            background: #e74c3c;
-            color: white;
+            background: #ff5252;
+            color: #fff;
             border: none;
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 15px;
             cursor: pointer;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 500;
-            transition: background 0.3s;
+            transition: background 0.2s;
         }
         
         .logout-btn:hover {
-            background: #c0392b;
+            background: #d32f2f;
         }
         
         .welcome-text {
             text-align: center;
             font-size: 18px;
             margin-bottom: 20px;
-            color: #FFD700;
+            color: #4caf50;
         }
         
         /* Google Ads Styling */
@@ -92,17 +123,17 @@
         .ad-sidebar {
             width: 300px;
             min-height: 600px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: #222;
+            border-radius: 20px;
             padding: 20px;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
         .ad-banner {
             width: 100%;
             height: 90px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: #333;
+            border-radius: 15px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -113,10 +144,10 @@
         
         .main-content {
             flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: #222;
+            border-radius: 20px;
             padding: 30px;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
         .content-wrapper {
@@ -158,7 +189,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo"><a href="https://bonobudget.com" style="text-decoration: none; color: #4caf50;"  id="returntoindex">Bonobudget</a></div>
+        <div class="logo">Bonobudget</div>
         <div class="nav">
             <div class="nav-item active">Dashboard</div>
             <div class="nav-item" onclick="window.location.href='bank.html'">Bank</div>
@@ -169,14 +200,8 @@
             <button class="logout-btn" id="logoutBtn">Logout</button>
         </div>
     </div>
+
     <div class="container">
-        <div class="header">
-            <div class="logo">BonoBudget</div>
-            <div class="user-info">
-                <div class="user-email" id="userEmail"></div>
-                <button class="logout-btn" id="logoutBtn">Logout</button>
-            </div>
-        </div>
         
         <div class="welcome-text" id="welcome"></div>
         
@@ -231,8 +256,8 @@
             
             <!-- Main Content -->
             <div class="main-content">
-                <h2 style="color:#FFD700;text-align:center;margin-top:40px;">Your Financial Flow</h2>
-                <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#222;border-radius:16px;padding:20px;"></div>
+                <h2 style="color:#4caf50;text-align:center;margin-top:40px;">Your Financial Flow</h2>
+                <div id="sankey_chart" style="width:100%;height:600px;margin:0 auto;background:#333;border-radius:20px;padding:20px;"></div>
             </div>
             
             <!-- Right Sidebar Ads -->
