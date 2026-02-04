@@ -2800,15 +2800,118 @@ SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
             </script>
         </head>
         <body class="x  x-fonts-playfair-display x-fonts-source-sans-pro x-fonts-montserrat">
-            <header style="width: 100%; text-align: center; position: absolute; top: 20px; left: 0; z-index: 1001; pointer-events: none;">
-                <h3 role="heading" aria-level="3" data-ux="LogoHeading" id="logo-text-148484" data-aid="HEADER_LOGO_TEXT_RENDERED" headerTreatment="Fill" fontScaleMultiplier="0.8" data-typography="LogoAlpha" data-font-scaled="true" class="x-el x-el-h3 c1-2z c1-30 c1-2n c1-2c c1-31 c1-20 c1-1y c1-1x c1-1z c1-2u c1-2f c1-32 c1-33 c1-34 c1-35 c1-36 c1-37 c1-38 c1-39 c1-3a" style="pointer-events: auto;">Bonobudget</h3>
-                <div style="margin-top: 20px; background: #000; border: 1px solid #FFD700; border-radius: 10px; padding: 20px; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); pointer-events: auto;">
-                    <h4 style="margin: 0 0 15px 0; color: #fff; font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-family: 'Times New Roman', serif; text-align: center;">Our Mission Statement</h4>
-                    <p style="margin: 0; font-size: 20px; color: #fff; font-style: italic; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify; text-justify: inter-word;">"Budgeting goes beyond finances, and our goal is to help you master all aspects of your life."</p>
-                    <p style="margin: 15px 0 0 0; font-size: 16px; color: #fff; font-family: Arial, sans-serif; font-weight: 300; text-align: right;">-The Bonobudget Team</p>
+            <!-- Modern Hero Section -->
+            <div style="position: relative; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <!-- Animated Background -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover; opacity: 0.2; filter: blur(2px);"></div>
+                
+                <!-- Navigation -->
+                <nav style="position: absolute; top: 0; left: 0; right: 0; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                    <div style="font-size: 28px; font-weight: bold; color: #fff; font-family: 'Montserrat', sans-serif;">💰 Bonobudget</div>
+                    <div id="authButtonsContainer" style="display: flex; align-items: center; gap: 15px;">
+                        <a href="login.html" style="color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 25px; transition: all 0.3s;">Login</a>
+                        <a href="signup.html" style="background: #4caf50; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; transition: all 0.3s; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);">Get Started</a>
+                    </div>
+                </nav>
+                
+                <!-- Hero Content -->
+                <div style="position: relative; z-index: 100; text-align: center; color: #fff; padding: 100px 20px 40px; max-width: 900px;">
+                    <h1 style="font-size: 64px; font-weight: 900; margin-bottom: 20px; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); font-family: 'Montserrat', sans-serif; line-height: 1.2;">
+                        Take Control of Your Finances
+                    </h1>
+                    <p style="font-size: 24px; margin-bottom: 40px; opacity: 0.95; line-height: 1.6; font-weight: 300;">
+                        Budgeting goes beyond finances, and our goal is to help you master all aspects of your life.
+                    </p>
+                    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 50px;">
+                        <a href="signup.html" style="background: #4caf50; color: #fff; text-decoration: none; padding: 18px 45px; border-radius: 30px; font-size: 18px; font-weight: bold; transition: all 0.3s; box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4); display: inline-block;">
+                            Start Free Today
+                        </a>
+                        <a href="#features" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 18px 45px; border-radius: 30px; font-size: 18px; font-weight: bold; transition: all 0.3s; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); display: inline-block;">
+                            Learn More
+                        </a>
+                    </div>
                 </div>
-              </header>
-            <div id="layout-fc-1-db-86-b-c-0-e-3-47-dc-bc-1-e-6-d-18232248-c-0" class="layout layout-layout layout-layout-layout-13 locale-en-US lang-en">
+                
+                <!-- Scroll Indicator -->
+                <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; animation: bounce 2s infinite;">
+                    <div style="width: 30px; height: 50px; border: 2px solid rgba(255,255,255,0.5); border-radius: 25px; position: relative;">
+                        <div style="width: 4px; height: 10px; background: rgba(255,255,255,0.7); border-radius: 2px; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); animation: scroll 2s infinite;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Section -->
+            <section id="features" style="padding: 100px 20px; background: #f8f9fa;">
+                <div style="max-width: 1200px; margin: 0 auto;">
+                    <h2 style="text-align: center; font-size: 48px; font-weight: bold; margin-bottom: 60px; color: #333; font-family: 'Montserrat', sans-serif;">
+                        Why Choose Bonobudget?
+                    </h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 60px;">
+                        <!-- Feature 1 -->
+                        <div style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; text-align: center;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">
+                                📊
+                            </div>
+                            <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #333;">Visual Insights</h3>
+                            <p style="color: #666; line-height: 1.6; font-size: 16px;">See your financial flow with beautiful, interactive Sankey diagrams that make budgeting intuitive and engaging.</p>
+                        </div>
+                        
+                        <!-- Feature 2 -->
+                        <div style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; text-align: center;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">
+                                ⚡
+                            </div>
+                            <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #333;">Smart Quiz</h3>
+                            <p style="color: #666; line-height: 1.6; font-size: 16px;">Our intelligent questionnaire adapts to your answers, skipping irrelevant questions to save you time.</p>
+                        </div>
+                        
+                        <!-- Feature 3 -->
+                        <div style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; text-align: center;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">
+                                🎯
+                            </div>
+                            <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #333;">Goal Tracking</h3>
+                            <p style="color: #666; line-height: 1.6; font-size: 16px;">Set and track your financial goals with ease. Stay motivated and achieve your dreams faster.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- CTA Section -->
+            <section style="padding: 100px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center; color: #fff;">
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h2 style="font-size: 48px; font-weight: bold; margin-bottom: 30px; font-family: 'Montserrat', sans-serif;">
+                        Ready to Transform Your Finances?
+                    </h2>
+                    <p style="font-size: 20px; margin-bottom: 40px; opacity: 0.95; line-height: 1.6;">
+                        Join thousands of users who are taking control of their financial future today.
+                    </p>
+                    <a href="signup.html" style="background: #4caf50; color: #fff; text-decoration: none; padding: 20px 50px; border-radius: 30px; font-size: 20px; font-weight: bold; transition: all 0.3s; box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4); display: inline-block;">
+                        Get Started Free
+                    </a>
+                </div>
+            </section>
+            
+            <!-- Footer -->
+            <footer style="background: #222; color: #fff; padding: 40px 20px; text-align: center;">
+                <p style="margin: 0; opacity: 0.8;">Copyright © 2025 Bonobudget - All Rights Reserved.</p>
+            </footer>
+            
+            <style>
+                @keyframes bounce {
+                    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+                    40% { transform: translateX(-50%) translateY(-10px); }
+                    60% { transform: translateX(-50%) translateY(-5px); }
+                }
+                @keyframes scroll {
+                    0% { transform: translateX(-50%) translateY(0); opacity: 1; }
+                    100% { transform: translateX(-50%) translateY(20px); opacity: 0; }
+                }
+                a:hover {
+                    transform: translateY(-2px);
+                }
+            </style>
+            <div id="layout-fc-1-db-86-b-c-0-e-3-47-dc-bc-1-e-6-d-18232248-c-0" class="layout layout-layout layout-layout-layout-13 locale-en-US lang-en" style="display: none;">
                 <div data-ux="Page" id="page-148473" class="x-el x-el-div x-el c1-1 c1-2 c1-3 c1-4 c1-5 c1-6 c1-7 c1-8 c1-9 c1-a c1-b c1-c c1-d c1-e c1-f c1-g c1-1 c1-2 c1-b c1-c c1-d c1-e c1-f c1-g">
                     <div data-ux="Block" class="x-el x-el-div page-inner c1-1 c1-2 c1-b c1-c c1-d c1-e c1-f c1-g">
                         <div id="71a5b96d-5d09-4403-9988-2116efa4263f" class="widget widget-header widget-header-header-9">

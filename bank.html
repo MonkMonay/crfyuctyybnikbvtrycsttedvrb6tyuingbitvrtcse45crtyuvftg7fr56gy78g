@@ -23,10 +23,13 @@
         .question-text { color: #ccc; font-size: 18px; margin-bottom: 30px; }
         .input-group { margin-bottom: 20px; }
         .amount-input { background: #333; border: 1px solid #444; color: #fff; padding: 15px; border-radius: 15px; width: 200px; font-size: 16px; text-align: center; }
-        .skip-btn { background: #666; color: #fff; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; transition: background 0.2s; margin: 10px; }
+        .skip-btn { background: #666; color: #fff; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; transition: background 0.2s; }
         .skip-btn:hover { background: #777; }
-        .next-btn { background: #4caf50; color: #fff; border: none; padding: 15px 30px; border-radius: 15px; cursor: pointer; font-size: 16px; margin: 10px; transition: background 0.2s; }
+        .next-btn { background: #4caf50; color: #fff; border: none; padding: 15px 30px; border-radius: 15px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
         .next-btn:hover { background: #388e3c; }
+        .quick-btn { background: #444; color: #fff; border: 2px solid #666; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .quick-btn:hover { background: #555; border-color: #4caf50; transform: translateY(-2px); }
+        .quick-btn.active { background: #4caf50; border-color: #4caf50; }
         .progress-bar { background: #333; height: 8px; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
         .progress-fill { background: #4caf50; height: 100%; transition: width 0.3s; }
         .progress-text { color: #ccc; margin-bottom: 20px; }
@@ -85,8 +88,19 @@
                 <div class="input-group">
                     <input type="number" class="amount-input" id="amountInput" placeholder="$0" min="0" step="0.01">
                 </div>
-                <button class="skip-btn" id="skipBtn">Skip this category</button>
-                <button class="next-btn" id="nextBtn">Next</button>
+                <!-- Quick Entry Buttons -->
+                <div id="quickEntryButtons" style="display: none; margin: 20px 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="quick-btn" data-amount="0">$0</button>
+                    <button class="quick-btn" data-amount="50">$50</button>
+                    <button class="quick-btn" data-amount="100">$100</button>
+                    <button class="quick-btn" data-amount="200">$200</button>
+                    <button class="quick-btn" data-amount="500">$500</button>
+                    <button class="quick-btn" data-amount="1000">$1,000</button>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button class="skip-btn" id="skipBtn">Skip this category</button>
+                    <button class="next-btn" id="nextBtn">Next</button>
+                </div>
             </div>
         </div>
 
@@ -282,29 +296,98 @@
         displaySummary();
     }
 
+    // Function to check if a question should be skipped
+    function shouldSkipQuestion(category, item, questionCount) {
+        // Skip Additional Income questions if user said no
+        if (item.label === 'Additional Income Sources' || item.label === 'Additional Monthly Income') {
+            return userResponses['Has Additional Income'] === 'no';
+        }
+        
+        // Skip Irregular Income questions if user said no
+        if (item.label === 'Irregular Income Types' || item.label === 'Annual Irregular Income') {
+            return userResponses['Has Irregular Income'] === 'no';
+        }
+        
+        // Skip mortgage questions if no rent/mortgage
+        if (item.label === 'Mortgage Interest Rate' || item.label === 'Mortgage Principal') {
+            const rentMortgage = parseFloat(userResponses['Rent/Mortgage']) || 0;
+            return rentMortgage === 0;
+        }
+        
+        // Skip car-related questions if no car payment
+        if (category.title === 'Transportation' && 
+            (item.label === 'Gas/Fuel' || item.label === 'Car Insurance' || item.label === 'Maintenance/Repairs')) {
+            const carPayment = parseFloat(userResponses['Car Payment/Lease']) || 0;
+            // Only skip if user explicitly entered 0 (not if they skipped)
+            return carPayment === 0 && userResponses['Car Payment/Lease'] !== 'skipped' && userResponses['Car Payment/Lease'] !== undefined;
+        }
+        
+        return false;
+    }
+    
+    // Function to get the actual total number of questions (excluding skipped ones)
+    function getTotalQuestions() {
+        let total = 0;
+        for (const category of spendingCategories) {
+            for (const item of category.items) {
+                // Create a temporary question count to check if this would be skipped
+                let questionCount = 0;
+                for (const cat of spendingCategories) {
+                    for (const itm of cat.items) {
+                        if (cat === category && itm === item) {
+                            break;
+                        }
+                        if (!shouldSkipQuestion(cat, itm, questionCount)) {
+                            questionCount++;
+                        }
+                    }
+                    if (cat === category && category.items.indexOf(item) !== -1) {
+                        break;
+                    }
+                }
+                if (!shouldSkipQuestion(category, item, questionCount)) {
+                    total++;
+                }
+            }
+        }
+        return total;
+    }
+
     // Show current question
     function showCurrentQuestion() {
-        const totalQuestions = spendingCategories.reduce((sum, category) => sum + category.items.length, 0);
-        const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
-        
-        progressFill.style.width = progress + '%';
-        progressText.textContent = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
-
+        // Find the actual question at currentQuestionIndex (skipping questions that should be skipped)
         let questionCount = 0;
         let currentCategory = null;
         let currentItem = null;
+        let actualIndex = 0;
 
         for (const category of spendingCategories) {
             for (const item of category.items) {
-                if (questionCount === currentQuestionIndex) {
-                    currentCategory = category;
-                    currentItem = item;
-                    break;
+                if (!shouldSkipQuestion(category, item, questionCount)) {
+                    if (actualIndex === currentQuestionIndex) {
+                        currentCategory = category;
+                        currentItem = item;
+                        break;
+                    }
+                    actualIndex++;
                 }
                 questionCount++;
             }
             if (currentItem) break;
         }
+        
+        // If we've gone past all questions, show summary
+        if (!currentItem) {
+            showSummaryView();
+            saveUserData();
+            return;
+        }
+        
+        const totalQuestions = getTotalQuestions();
+        const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+        
+        progressFill.style.width = progress + '%';
+        progressText.textContent = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
 
         questionTitle.textContent = currentCategory.title;
         questionText.textContent = currentItem.question;
@@ -355,18 +438,7 @@
             noBtn.textContent = 'No';
             noBtn.onclick = () => {
                 userResponses[currentItem.label] = 'no';
-                // Custom skip logic for follow-up questions
-                if (currentItem.label === 'Has Additional Income') {
-                    // Skip 'Additional Income Sources' and 'Additional Monthly Income'
-                    currentQuestionIndex += 2;
-                    showCurrentQuestion();
-                    return;
-                } else if (currentItem.label === 'Has Irregular Income') {
-                    // Skip 'Irregular Income Types' and 'Annual Irregular Income'
-                    currentQuestionIndex += 2;
-                    showCurrentQuestion();
-                    return;
-                }
+                // Move to next question (skip logic is handled in showCurrentQuestion)
                 nextBtn.click();
             };
             
@@ -458,6 +530,29 @@
             inputGroup.appendChild(input);
         }
         
+        // Show/hide quick entry buttons for number inputs
+        const quickEntryButtons = document.getElementById('quickEntryButtons');
+        if (currentItem && (currentItem.type === 'number' || !currentItem.type) && currentItem.type !== 'calculated') {
+            quickEntryButtons.style.display = 'flex';
+            // Add click handlers to quick buttons
+            const quickBtns = quickEntryButtons.querySelectorAll('.quick-btn');
+            quickBtns.forEach(btn => {
+                btn.onclick = () => {
+                    const amount = btn.getAttribute('data-amount');
+                    const input = document.getElementById('amountInput');
+                    if (input) {
+                        input.value = amount;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                    // Update active state
+                    quickBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                };
+            });
+        } else {
+            quickEntryButtons.style.display = 'none';
+        }
+        
         // Focus on input if it exists
         const input = document.getElementById('amountInput');
         if (input) input.focus();
@@ -465,17 +560,19 @@
 
     // Next button click
     nextBtn.addEventListener('click', function() {
-        const totalQuestions = spendingCategories.reduce((sum, category) => sum + category.items.length, 0);
-        
-        // Save current response based on question type
+        // Find the actual current question (accounting for skipped questions)
         let questionCount = 0;
         let currentItem = null;
+        let actualIndex = 0;
 
         for (const category of spendingCategories) {
             for (const item of category.items) {
-                if (questionCount === currentQuestionIndex) {
-                    currentItem = item;
-                    break;
+                if (!shouldSkipQuestion(category, item, questionCount)) {
+                    if (actualIndex === currentQuestionIndex) {
+                        currentItem = item;
+                        break;
+                    }
+                    actualIndex++;
                 }
                 questionCount++;
             }
@@ -505,6 +602,7 @@
         }
         // For yesno and calculated types, the value is already saved
         
+        const totalQuestions = getTotalQuestions();
         if (currentQuestionIndex < totalQuestions - 1) {
             currentQuestionIndex++;
             showCurrentQuestion();
@@ -517,22 +615,29 @@
 
     // Skip button click
     skipBtn.addEventListener('click', function() {
+        // Find the actual current question (accounting for skipped questions)
         let questionCount = 0;
         let currentItem = null;
+        let actualIndex = 0;
 
         for (const category of spendingCategories) {
             for (const item of category.items) {
-                if (questionCount === currentQuestionIndex) {
-                    currentItem = item;
-                    break;
+                if (!shouldSkipQuestion(category, item, questionCount)) {
+                    if (actualIndex === currentQuestionIndex) {
+                        currentItem = item;
+                        break;
+                    }
+                    actualIndex++;
                 }
                 questionCount++;
             }
             if (currentItem) break;
         }
 
-        userResponses[currentItem.label] = 'skipped';
-        nextBtn.click();
+        if (currentItem) {
+            userResponses[currentItem.label] = 'skipped';
+            nextBtn.click();
+        }
     });
 
     // Amount input change (for number inputs only)

@@ -736,10 +736,21 @@
         try {
             console.log('About to create Sankey with nodes:', nodes.length, 'and links:', validLinks.length);
             
-            const {nodes: sankeyNodes, links: sankeyLinks} = sankey({
-                nodes: nodes,
-                links: validLinks
-            });
+            // Create a deep copy of nodes and links for sankey to mutate
+            const sankeyData = {
+                nodes: nodes.map(n => ({...n})),
+                links: validLinks.map(l => ({
+                    source: l.source,
+                    target: l.target,
+                    value: l.value
+                }))
+            };
+            
+            // Run sankey layout
+            sankey(sankeyData);
+            
+            const sankeyNodes = sankeyData.nodes;
+            const sankeyLinks = sankeyData.links;
             
             const color = d3.scaleOrdinal()
                 .domain(nodes.map(d => d.name))
@@ -945,19 +956,27 @@
                 
                 if (subcategories.length > 0) {
                     // Create expanded nodes and links for subcategories
-                    const expandedNodes = [...sankeyNodes];
-                    const expandedLinks = [...sankeyLinks];
+                    const expandedNodes = sankeyNodes.map(n => ({...n}));
+                    const expandedLinks = sankeyLinks.map(l => ({
+                        source: typeof l.source === 'number' ? l.source : sankeyNodes.indexOf(l.source),
+                        target: typeof l.target === 'number' ? l.target : sankeyNodes.indexOf(l.target),
+                        value: l.value
+                    }));
+                    
+                    // Find the target category node index
+                    const categoryNodeIndex = expandedNodes.findIndex(n => n.name === targetCategory);
                     
                     // Add subcategory nodes
                     subcategories.forEach(sub => {
                         expandedNodes.push({ name: sub.name });
                     });
                     
-                    // Add links from the category to its subcategories
+                    // Add links from the category to its subcategories (using indices)
                     subcategories.forEach(sub => {
+                        const subcategoryIndex = expandedNodes.findIndex(n => n.name === sub.name);
                         expandedLinks.push({
-                            source: expandedNodes.find(n => n.name === targetCategory),
-                            target: expandedNodes.find(n => n.name === sub.name),
+                            source: categoryNodeIndex,
+                            target: subcategoryIndex,
                             value: sub.amount
                         });
                     });
@@ -968,10 +987,18 @@
                         .nodePadding(40)
                         .extent([[1, 1], [width - 1, height - 1]]);
                     
-                    const {nodes: newNodes, links: newLinks} = expandedSankey({
-                        nodes: expandedNodes,
-                        links: expandedLinks
-                    });
+                    const expandedSankeyData = {
+                        nodes: expandedNodes.map(n => ({...n})),
+                        links: expandedLinks.map(l => ({
+                            source: typeof l.source === 'object' ? expandedNodes.indexOf(l.source) : l.source,
+                            target: typeof l.target === 'object' ? expandedNodes.indexOf(l.target) : l.target,
+                            value: l.value
+                        }))
+                    };
+                    
+                    expandedSankey(expandedSankeyData);
+                    const newNodes = expandedSankeyData.nodes;
+                    const newLinks = expandedSankeyData.links;
                     
                     // Update the visualization
                     updateSankeyVisualization(newNodes, newLinks, color);
@@ -981,10 +1008,18 @@
             // Function to hide detailed breakdown
             function hideDetailedBreakdown() {
                 // Revert to original Sankey layout
-                const {nodes: originalNodes, links: originalLinks} = sankey({
-                    nodes: nodes,
-                    links: validLinks
-                });
+                const originalSankeyData = {
+                    nodes: nodes.map(n => ({...n})),
+                    links: validLinks.map(l => ({
+                        source: l.source,
+                        target: l.target,
+                        value: l.value
+                    }))
+                };
+                
+                sankey(originalSankeyData);
+                const originalNodes = originalSankeyData.nodes;
+                const originalLinks = originalSankeyData.links;
                 
                 updateSankeyVisualization(originalNodes, originalLinks, color);
             }
