@@ -21,10 +21,13 @@
         .question-container { background: #222; padding: 40px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; }
         .question-title { color: #4caf50; font-size: 24px; margin-bottom: 20px; }
         .question-text { color: #ccc; font-size: 18px; margin-bottom: 30px; }
+        .question-subtext { color: #999; font-size: 13px; margin-bottom: 16px; }
         .input-group { margin-bottom: 20px; }
         .amount-input { background: #333; border: 1px solid #444; color: #fff; padding: 15px; border-radius: 15px; width: 200px; font-size: 16px; text-align: center; }
         .skip-btn { background: #666; color: #fff; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; transition: background 0.2s; }
         .skip-btn:hover { background: #777; }
+        .back-btn { background: #37474f; }
+        .back-btn:hover { background: #455a64; }
         .next-btn { background: #4caf50; color: #fff; border: none; padding: 15px 30px; border-radius: 15px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
         .next-btn:hover { background: #388e3c; }
         .quick-btn { background: #444; color: #fff; border: 2px solid #666; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
@@ -53,6 +56,46 @@
         .summary-column:last-child {
             border-right: none; /* Remove separator for the last column */
         }
+        .setup-view { background: #222; border-radius: 20px; padding: 35px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .setup-title { color: #4caf50; font-size: 28px; margin-bottom: 10px; text-align: center; }
+        .setup-subtitle { color: #bbb; text-align: center; margin-bottom: 24px; }
+        .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .setup-option {
+            background: #2c2c2c;
+            border: 1px solid #3a3a3a;
+            border-radius: 14px;
+            padding: 20px;
+            cursor: pointer;
+            text-align: left;
+            color: #fff;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .setup-option:hover { border-color: #4caf50; transform: translateY(-1px); }
+        .setup-option h3 { margin: 0 0 8px; font-size: 20px; color: #4caf50; }
+        .setup-option p { margin: 0 0 10px; color: #bbb; font-size: 14px; line-height: 1.4; }
+        .setup-chip {
+            display: inline-block;
+            font-size: 11px;
+            color: #91ff96;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            background: rgba(76, 175, 80, 0.15);
+            border-radius: 999px;
+            padding: 3px 8px;
+        }
+        .mode-badge {
+            display: inline-block;
+            font-size: 11px;
+            color: #81c9ff;
+            border: 1px solid rgba(33, 150, 243, 0.5);
+            background: rgba(33, 150, 243, 0.15);
+            border-radius: 999px;
+            padding: 3px 8px;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 900px) {
+            .setup-grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -76,6 +119,25 @@
     </div>
 
     <div class="container">
+        <div id="setupChoiceView" style="display: none;">
+            <div class="setup-view">
+                <div class="setup-title">Set Up Your Budget</div>
+                <div class="setup-subtitle">Pick the setup style that feels right. You can switch later.</div>
+                <div class="setup-grid">
+                    <button class="setup-option" id="quickSetupBtn" type="button">
+                        <h3>Quick Setup</h3>
+                        <p>Essential questions only for a clean first budget with less friction.</p>
+                        <span class="setup-chip">About 5 minutes</span>
+                    </button>
+                    <button class="setup-option" id="detailedSetupBtn" type="button">
+                        <h3>Detailed Setup</h3>
+                        <p>Full category breakdown for the most detailed dashboard and planning.</p>
+                        <span class="setup-chip">About 15 minutes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Questionnaire View -->
         <div id="questionnaireView" style="display: none;">
             <div class="question-container">
@@ -83,13 +145,15 @@
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
                 <div class="progress-text" id="progressText"></div>
+                <div class="mode-badge" id="modeBadge"></div>
                 <div class="question-title" id="questionTitle"></div>
                 <div class="question-text" id="questionText"></div>
+                <div class="question-subtext" id="questionSubtext"></div>
                 <div class="input-group">
                     <input type="number" class="amount-input" id="amountInput" placeholder="$0" min="0" step="0.01">
                 </div>
                 <!-- Quick Entry Buttons -->
-                <div id="quickEntryButtons" style="display: none; margin: 20px 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <div id="quickEntryButtons" style="display: none; margin: 20px 0; gap: 10px; justify-content: center; flex-wrap: wrap;">
                     <button class="quick-btn" data-amount="0">$0</button>
                     <button class="quick-btn" data-amount="50">$50</button>
                     <button class="quick-btn" data-amount="100">$100</button>
@@ -98,7 +162,8 @@
                     <button class="quick-btn" data-amount="1000">$1,000</button>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                    <button class="skip-btn" id="skipBtn">Skip this category</button>
+                    <button class="skip-btn back-btn" id="backBtn">Back</button>
+                    <button class="skip-btn" id="skipBtn">Skip question</button>
                     <button class="next-btn" id="nextBtn">Next</button>
                 </div>
             </div>
@@ -112,7 +177,10 @@
                 <div class="total-section">
                     <div class="total-text" id="totalAmount"></div>
                 </div>
-                <button class="edit-btn" id="editBtn">Edit Spending Categories</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+                    <button class="edit-btn" id="editBtn">Edit Spending Categories</button>
+                    <button class="next-btn" id="goDashboardBtn" type="button">Go to Dashboard</button>
+                </div>
             </div>
         </div>
     </div>
@@ -225,27 +293,65 @@
         ]}
     ];
 
+    const QUICK_SETUP_FIELDS = new Set([
+        'Primary Income Source',
+        'Primary Monthly Income',
+        'Has Additional Income',
+        'Additional Monthly Income',
+        'Total Monthly Income',
+        'Has Irregular Income',
+        'Annual Irregular Income',
+        'Total Annual Income',
+        'Rent/Mortgage',
+        'Utilities (Electricity, Water, Gas)',
+        'Internet & Phone',
+        'Car Payment/Lease',
+        'Gas/Fuel',
+        'Car Insurance',
+        'Public Transportation',
+        'Groceries',
+        'Restaurants',
+        'Food Delivery',
+        'Health Insurance',
+        'Streaming Services',
+        'Hobbies',
+        'Credit Cards',
+        'Student Loans',
+        'Personal Loans',
+        'Medical Debt',
+        'Emergency Fund',
+        'Retirement Savings',
+        'Investment Accounts'
+    ]);
+
     let currentQuestionIndex = 0;
     let userResponses = {};
     let currentUser = null;
+    let questionnaireMode = 'quick';
+    let questionFlow = [];
 
     // DOM elements
     const userEmail = document.getElementById('userEmail');
     const logoutBtn = document.getElementById('logoutBtn');
+    const setupChoiceView = document.getElementById('setupChoiceView');
+    const quickSetupBtn = document.getElementById('quickSetupBtn');
+    const detailedSetupBtn = document.getElementById('detailedSetupBtn');
     const questionnaireView = document.getElementById('questionnaireView');
     const summaryView = document.getElementById('summaryView');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
+    const modeBadge = document.getElementById('modeBadge');
     const questionTitle = document.getElementById('questionTitle');
     const questionText = document.getElementById('questionText');
-    const amountInput = document.getElementById('amountInput');
+    const questionSubtext = document.getElementById('questionSubtext');
     const skipBtn = document.getElementById('skipBtn');
+    const backBtn = document.getElementById('backBtn');
     const nextBtn = document.getElementById('nextBtn');
     const summaryContent = document.getElementById('summaryContent');
     const totalAmount = document.getElementById('totalAmount');
     const editBtn = document.getElementById('editBtn');
+    const goDashboardBtn = document.getElementById('goDashboardBtn');
 
-    // Check authentication and load data
     auth.onAuthStateChanged(function(user) {
         if (user) {
             currentUser = user;
@@ -256,24 +362,25 @@
         }
     });
 
-    // Load user data from Firestore
     async function loadUserData() {
         try {
             const doc = await db.collection('users').doc(currentUser.uid).collection('spending').doc('categories').get();
             if (doc.exists) {
-                userResponses = doc.data();
+                userResponses = doc.data() || {};
                 showSummaryView();
             } else {
-                showQuestionnaireView();
+                userResponses = {};
+                showSetupChoiceView();
             }
         } catch (error) {
             console.error('Error loading data:', error);
-            showQuestionnaireView();
+            userResponses = {};
+            showSetupChoiceView();
         }
     }
 
-    // Save user data to Firestore
     async function saveUserData() {
+        if (!currentUser) return;
         try {
             await db.collection('users').doc(currentUser.uid).collection('spending').doc('categories').set(userResponses);
         } catch (error) {
@@ -281,244 +388,223 @@
         }
     }
 
-    // Show questionnaire view
+    function showSetupChoiceView() {
+        setupChoiceView.style.display = 'block';
+        questionnaireView.style.display = 'none';
+        summaryView.style.display = 'none';
+    }
+
     function showQuestionnaireView() {
+        setupChoiceView.style.display = 'none';
         questionnaireView.style.display = 'block';
         summaryView.style.display = 'none';
-        currentQuestionIndex = 0;
         showCurrentQuestion();
     }
 
-    // Show summary view
     function showSummaryView() {
+        setupChoiceView.style.display = 'none';
         questionnaireView.style.display = 'none';
         summaryView.style.display = 'block';
         displaySummary();
     }
 
-    // Function to check if a question should be skipped
-    function shouldSkipQuestion(category, item, questionCount) {
-        // Skip Additional Income questions if user said no
+    function startQuestionnaire(mode) {
+        questionnaireMode = mode;
+        questionFlow = buildQuestionFlow(mode);
+        currentQuestionIndex = 0;
+        showQuestionnaireView();
+    }
+
+    function buildQuestionFlow(mode) {
+        const flow = [];
+        for (const category of spendingCategories) {
+            for (const item of category.items) {
+                const includeInMode = mode === 'detailed' || QUICK_SETUP_FIELDS.has(item.label) || item.type === 'calculated';
+                if (includeInMode) {
+                    flow.push({ category, item });
+                }
+            }
+        }
+        return flow;
+    }
+
+    function toNumber(value) {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function shouldSkipQuestion(category, item) {
         if (item.label === 'Additional Income Sources' || item.label === 'Additional Monthly Income') {
             return userResponses['Has Additional Income'] === 'no';
         }
-        
-        // Skip Irregular Income questions if user said no
+
         if (item.label === 'Irregular Income Types' || item.label === 'Annual Irregular Income') {
             return userResponses['Has Irregular Income'] === 'no';
         }
-        
-        // Skip mortgage questions if no rent/mortgage
+
         if (item.label === 'Mortgage Interest Rate' || item.label === 'Mortgage Principal') {
-            const rentMortgage = parseFloat(userResponses['Rent/Mortgage']) || 0;
-            return rentMortgage === 0;
+            const rentMortgage = toNumber(userResponses['Rent/Mortgage']);
+            return rentMortgage <= 0;
         }
-        
-        // Skip car-related questions if no car payment
-        if (category.title === 'Transportation' && 
-            (item.label === 'Gas/Fuel' || item.label === 'Car Insurance' || item.label === 'Maintenance/Repairs')) {
-            const carPayment = parseFloat(userResponses['Car Payment/Lease']) || 0;
-            // Only skip if user explicitly entered 0 (not if they skipped)
-            return carPayment === 0 && userResponses['Car Payment/Lease'] !== 'skipped' && userResponses['Car Payment/Lease'] !== undefined;
+
+        if (category.title === 'Transportation' && (item.label === 'Gas/Fuel' || item.label === 'Car Insurance' || item.label === 'Maintenance/Repairs')) {
+            const carPayment = toNumber(userResponses['Car Payment/Lease']);
+            return carPayment <= 0 && userResponses['Car Payment/Lease'] !== undefined && userResponses['Car Payment/Lease'] !== 'skipped';
         }
-        
+
         return false;
     }
-    
-    // Function to get the actual total number of questions (excluding skipped ones)
-    function getTotalQuestions() {
-        let total = 0;
-        for (const category of spendingCategories) {
-            for (const item of category.items) {
-                // Create a temporary question count to check if this would be skipped
-                let questionCount = 0;
-                for (const cat of spendingCategories) {
-                    for (const itm of cat.items) {
-                        if (cat === category && itm === item) {
-                            break;
-                        }
-                        if (!shouldSkipQuestion(cat, itm, questionCount)) {
-                            questionCount++;
-                        }
-                    }
-                    if (cat === category && category.items.indexOf(item) !== -1) {
-                        break;
-                    }
-                }
-                if (!shouldSkipQuestion(category, item, questionCount)) {
-                    total++;
-                }
+
+    function getCurrentQuestionEntry() {
+        while (currentQuestionIndex < questionFlow.length) {
+            const entry = questionFlow[currentQuestionIndex];
+            if (!shouldSkipQuestion(entry.category, entry.item)) {
+                return entry;
             }
+            if (userResponses[entry.item.label] === undefined) {
+                userResponses[entry.item.label] = 'skipped';
+            }
+            currentQuestionIndex += 1;
         }
-        return total;
+        return null;
     }
 
-    // Show current question
-    function showCurrentQuestion() {
-        // Find the actual question at currentQuestionIndex (skipping questions that should be skipped)
-        let questionCount = 0;
-        let currentCategory = null;
-        let currentItem = null;
-        let actualIndex = 0;
-
-        for (const category of spendingCategories) {
-            for (const item of category.items) {
-                if (!shouldSkipQuestion(category, item, questionCount)) {
-                    if (actualIndex === currentQuestionIndex) {
-                        currentCategory = category;
-                        currentItem = item;
-                        break;
-                    }
-                    actualIndex++;
+    function getProgressInfo() {
+        let visibleTotal = 0;
+        let currentVisibleIndex = 0;
+        for (let i = 0; i < questionFlow.length; i += 1) {
+            const entry = questionFlow[i];
+            if (!shouldSkipQuestion(entry.category, entry.item)) {
+                visibleTotal += 1;
+                if (i <= currentQuestionIndex) {
+                    currentVisibleIndex = visibleTotal;
                 }
-                questionCount++;
             }
-            if (currentItem) break;
         }
-        
-        // If we've gone past all questions, show summary
-        if (!currentItem) {
-            showSummaryView();
-            saveUserData();
-            return;
-        }
-        
-        const totalQuestions = getTotalQuestions();
-        const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
-        
-        progressFill.style.width = progress + '%';
-        progressText.textContent = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
+        return {
+            current: Math.max(1, currentVisibleIndex),
+            total: Math.max(1, visibleTotal)
+        };
+    }
 
-        questionTitle.textContent = currentCategory.title;
-        questionText.textContent = currentItem.question;
-        
-        // Clear previous input
+    function hasNextVisibleQuestion() {
+        for (let i = currentQuestionIndex + 1; i < questionFlow.length; i += 1) {
+            const entry = questionFlow[i];
+            if (!shouldSkipQuestion(entry.category, entry.item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function renderCurrentInput(item) {
         const inputGroup = document.querySelector('.input-group');
         inputGroup.innerHTML = '';
-        
-        // Handle different question types
-        if (currentItem.type === 'select') {
+        const quickEntryButtons = document.getElementById('quickEntryButtons');
+
+        if (item.type === 'select') {
             const select = document.createElement('select');
             select.className = 'amount-input';
             select.id = 'amountInput';
-            
+
             const defaultOption = document.createElement('option');
             defaultOption.value = '';
             defaultOption.textContent = 'Select an option...';
             select.appendChild(defaultOption);
-            
-            currentItem.options.forEach(option => {
+
+            item.options.forEach(option => {
                 const optionElement = document.createElement('option');
                 optionElement.value = option;
                 optionElement.textContent = option;
                 select.appendChild(optionElement);
             });
-            
-            select.value = userResponses[currentItem.label] || '';
+            select.value = userResponses[item.label] || '';
             inputGroup.appendChild(select);
-            
-        } else if (currentItem.type === 'yesno') {
+            quickEntryButtons.style.display = 'none';
+        } else if (item.type === 'yesno') {
             const buttonGroup = document.createElement('div');
             buttonGroup.style.display = 'flex';
             buttonGroup.style.gap = '10px';
             buttonGroup.style.justifyContent = 'center';
-            
+
+            const currentValue = userResponses[item.label];
             const yesBtn = document.createElement('button');
             yesBtn.type = 'button';
-            yesBtn.className = 'next-btn';
+            yesBtn.className = `next-btn ${currentValue === 'yes' ? 'quick-btn active' : ''}`;
             yesBtn.textContent = 'Yes';
             yesBtn.onclick = () => {
-                userResponses[currentItem.label] = 'yes';
-                nextBtn.click();
+                userResponses[item.label] = 'yes';
+                handleNext();
             };
-            
+
             const noBtn = document.createElement('button');
             noBtn.type = 'button';
-            noBtn.className = 'next-btn';
+            noBtn.className = `next-btn ${currentValue === 'no' ? 'quick-btn active' : ''}`;
             noBtn.textContent = 'No';
             noBtn.onclick = () => {
-                userResponses[currentItem.label] = 'no';
-                // Move to next question (skip logic is handled in showCurrentQuestion)
-                nextBtn.click();
+                userResponses[item.label] = 'no';
+                handleNext();
             };
-            
+
             buttonGroup.appendChild(yesBtn);
             buttonGroup.appendChild(noBtn);
             inputGroup.appendChild(buttonGroup);
-            
-        } else if (currentItem.type === 'multiselect') {
+            quickEntryButtons.style.display = 'none';
+        } else if (item.type === 'multiselect') {
+            const selectedValues = Array.isArray(userResponses[item.label]) ? userResponses[item.label] : [];
             const checkboxGroup = document.createElement('div');
             checkboxGroup.style.textAlign = 'left';
-            checkboxGroup.style.maxHeight = '200px';
+            checkboxGroup.style.maxHeight = '220px';
             checkboxGroup.style.overflowY = 'auto';
-            
-            currentItem.options.forEach(option => {
+            checkboxGroup.style.padding = '8px 12px';
+            checkboxGroup.style.background = '#2c2c2c';
+            checkboxGroup.style.borderRadius = '12px';
+
+            item.options.forEach(option => {
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.style.marginBottom = '10px';
-                
+
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.id = option;
+                checkbox.id = `${item.label}-${option}`;
                 checkbox.value = option;
-                
+                checkbox.checked = selectedValues.includes(option);
+
                 const label = document.createElement('label');
-                label.htmlFor = option;
+                label.htmlFor = checkbox.id;
                 label.textContent = option;
                 label.style.marginLeft = '10px';
                 label.style.color = '#ccc';
-                
+
                 checkboxDiv.appendChild(checkbox);
                 checkboxDiv.appendChild(label);
                 checkboxGroup.appendChild(checkboxDiv);
             });
-            
+
             inputGroup.appendChild(checkboxGroup);
-            
-        } else if (currentItem.type === 'calculated') {
+            quickEntryButtons.style.display = 'none';
+        } else if (item.type === 'calculated') {
             const displayDiv = document.createElement('div');
             displayDiv.className = 'amount-input';
             displayDiv.style.backgroundColor = '#444';
             displayDiv.style.border = '1px solid #666';
-            
+
             let calculatedValue = 0;
-            
-            if (currentItem.label === 'Total Monthly Income') {
-                const primary = parseFloat(userResponses['Primary Monthly Income']) || 0;
-                const additional = parseFloat(userResponses['Additional Monthly Income']) || 0;
+            if (item.label === 'Total Monthly Income') {
+                const primary = toNumber(userResponses['Primary Monthly Income']);
+                const additional = toNumber(userResponses['Additional Monthly Income']);
                 calculatedValue = primary + additional;
-            } else if (currentItem.label === 'Total Annual Income') {
-                const monthly = parseFloat(userResponses['Total Monthly Income']) || 0;
-                const irregular = parseFloat(userResponses['Annual Irregular Income']) || 0;
+            } else if (item.label === 'Total Annual Income') {
+                const monthly = toNumber(userResponses['Total Monthly Income']);
+                const irregular = toNumber(userResponses['Annual Irregular Income']);
                 calculatedValue = (monthly * 12) + irregular;
             }
-            
-            displayDiv.textContent = `$${calculatedValue.toFixed(2)}`;
-            userResponses[currentItem.label] = calculatedValue.toFixed(2);
-            inputGroup.appendChild(displayDiv);
-            
-        } else if (currentItem.type === 'interest_and_principal') {
-            const interestInput = document.createElement('input');
-            interestInput.type = 'number';
-            interestInput.className = 'amount-input';
-            interestInput.id = 'interestInput';
-            interestInput.placeholder = 'Interest Rate (%)';
-            interestInput.min = '0';
-            interestInput.step = '0.01';
-            interestInput.value = userResponses['Mortgage Interest Rate'] || '';
-            inputGroup.appendChild(interestInput);
 
-            const principalInput = document.createElement('input');
-            principalInput.type = 'number';
-            principalInput.className = 'amount-input';
-            principalInput.id = 'principalInput';
-            principalInput.placeholder = 'Principal ($)';
-            principalInput.min = '0';
-            principalInput.step = '0.01';
-            principalInput.value = userResponses['Mortgage Principal'] || '';
-            inputGroup.appendChild(principalInput);
-        }
-        else {
-            // Default number input
+            userResponses[item.label] = calculatedValue.toFixed(2);
+            displayDiv.textContent = `$${calculatedValue.toFixed(2)}`;
+            inputGroup.appendChild(displayDiv);
+            quickEntryButtons.style.display = 'none';
+        } else {
             const input = document.createElement('input');
             input.type = 'number';
             input.className = 'amount-input';
@@ -526,177 +612,145 @@
             input.placeholder = '$0';
             input.min = '0';
             input.step = '0.01';
-            input.value = userResponses[currentItem.label] || '';
+            input.value = userResponses[item.label] && userResponses[item.label] !== 'skipped' ? userResponses[item.label] : '';
             inputGroup.appendChild(input);
-        }
-        
-        // Show/hide quick entry buttons for number inputs
-        const quickEntryButtons = document.getElementById('quickEntryButtons');
-        if (currentItem && (currentItem.type === 'number' || !currentItem.type) && currentItem.type !== 'calculated') {
+
             quickEntryButtons.style.display = 'flex';
-            // Add click handlers to quick buttons
             const quickBtns = quickEntryButtons.querySelectorAll('.quick-btn');
             quickBtns.forEach(btn => {
+                btn.classList.remove('active');
                 btn.onclick = () => {
                     const amount = btn.getAttribute('data-amount');
-                    const input = document.getElementById('amountInput');
-                    if (input) {
-                        input.value = amount;
-                        input.dispatchEvent(new Event('input'));
-                    }
-                    // Update active state
-                    quickBtns.forEach(b => b.classList.remove('active'));
+                    input.value = amount;
+                    quickBtns.forEach(button => button.classList.remove('active'));
                     btn.classList.add('active');
                 };
             });
-        } else {
-            quickEntryButtons.style.display = 'none';
         }
-        
-        // Focus on input if it exists
+
         const input = document.getElementById('amountInput');
         if (input) input.focus();
     }
 
-    // Next button click
-    nextBtn.addEventListener('click', function() {
-        // Find the actual current question (accounting for skipped questions)
-        let questionCount = 0;
-        let currentItem = null;
-        let actualIndex = 0;
-
-        for (const category of spendingCategories) {
-            for (const item of category.items) {
-                if (!shouldSkipQuestion(category, item, questionCount)) {
-                    if (actualIndex === currentQuestionIndex) {
-                        currentItem = item;
-                        break;
-                    }
-                    actualIndex++;
-                }
-                questionCount++;
-            }
-            if (currentItem) break;
-        }
-
-        if (currentItem.type === 'select') {
-            const select = document.getElementById('amountInput');
-            userResponses[currentItem.label] = select.value;
-        } else if (currentItem.type === 'multiselect') {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            const selected = [];
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    selected.push(checkbox.value);
-                }
-            });
-            userResponses[currentItem.label] = selected;
-        } else if (currentItem.type === 'number' || !currentItem.type) {
-            const input = document.getElementById('amountInput');
-            userResponses[currentItem.label] = input.value;
-        } else if (currentItem.type === 'interest_and_principal') {
-            const interestInput = document.getElementById('interestInput');
-            const principalInput = document.getElementById('principalInput');
-            userResponses['Mortgage Interest Rate'] = interestInput.value;
-            userResponses['Mortgage Principal'] = principalInput.value;
-        }
-        // For yesno and calculated types, the value is already saved
-        
-        const totalQuestions = getTotalQuestions();
-        if (currentQuestionIndex < totalQuestions - 1) {
-            currentQuestionIndex++;
-            showCurrentQuestion();
-        } else {
-            // Questionnaire complete
+    function showCurrentQuestion() {
+        const entry = getCurrentQuestionEntry();
+        if (!entry) {
             showSummaryView();
             saveUserData();
+            return;
         }
-    });
 
-    // Skip button click
-    skipBtn.addEventListener('click', function() {
-        // Find the actual current question (accounting for skipped questions)
-        let questionCount = 0;
-        let currentItem = null;
-        let actualIndex = 0;
+        const { category, item } = entry;
+        const progressInfo = getProgressInfo();
+        const progress = (progressInfo.current / progressInfo.total) * 100;
 
-        for (const category of spendingCategories) {
-            for (const item of category.items) {
-                if (!shouldSkipQuestion(category, item, questionCount)) {
-                    if (actualIndex === currentQuestionIndex) {
-                        currentItem = item;
-                        break;
-                    }
-                    actualIndex++;
-                }
-                questionCount++;
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `Question ${progressInfo.current} of ${progressInfo.total}`;
+        modeBadge.textContent = questionnaireMode === 'quick' ? 'Quick Setup Mode' : 'Detailed Setup Mode';
+        questionTitle.textContent = category.title;
+        questionText.textContent = item.question || `Enter your monthly amount for ${item.label}.`;
+        questionSubtext.textContent = `Field: ${item.label}`;
+        backBtn.disabled = currentQuestionIndex === 0;
+        nextBtn.textContent = hasNextVisibleQuestion() ? 'Next' : 'Finish';
+
+        renderCurrentInput(item);
+    }
+
+    function saveCurrentQuestionValue() {
+        const entry = questionFlow[currentQuestionIndex];
+        if (!entry) return;
+        const item = entry.item;
+
+        if (item.type === 'select') {
+            const select = document.getElementById('amountInput');
+            userResponses[item.label] = select && select.value ? select.value : 'skipped';
+            return;
+        }
+
+        if (item.type === 'multiselect') {
+            const checkboxes = document.querySelectorAll('.input-group input[type="checkbox"]');
+            const selected = [];
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) selected.push(checkbox.value);
+            });
+            userResponses[item.label] = selected.length > 0 ? selected : 'skipped';
+            return;
+        }
+
+        if (item.type === 'calculated') {
+            return;
+        }
+
+        if (item.type === 'yesno') {
+            if (!userResponses[item.label]) {
+                userResponses[item.label] = 'skipped';
             }
-            if (currentItem) break;
+            return;
         }
 
-        if (currentItem) {
-            userResponses[currentItem.label] = 'skipped';
-            nextBtn.click();
+        const input = document.getElementById('amountInput');
+        if (!input || input.value.trim() === '') {
+            userResponses[item.label] = 'skipped';
+        } else {
+            userResponses[item.label] = input.value.trim();
         }
-    });
+    }
 
-    // Amount input change (for number inputs only)
-    document.addEventListener('input', function(e) {
-        if (e.target.id === 'amountInput' && e.target.type === 'number') {
-            let questionCount = 0;
-            let currentItem = null;
+    function handleNext() {
+        saveCurrentQuestionValue();
+        currentQuestionIndex += 1;
+        saveUserData();
+        showCurrentQuestion();
+    }
 
-            for (const category of spendingCategories) {
-                for (const item of category.items) {
-                    if (questionCount === currentQuestionIndex) {
-                        currentItem = item;
-                        break;
-                    }
-                    questionCount++;
-                }
-                if (currentItem) break;
-            }
-
-            if (currentItem && (currentItem.type === 'number' || !currentItem.type)) {
-                userResponses[currentItem.label] = e.target.value;
-            }
+    function handleBack() {
+        if (currentQuestionIndex === 0) return;
+        currentQuestionIndex -= 1;
+        while (currentQuestionIndex > 0) {
+            const entry = questionFlow[currentQuestionIndex];
+            if (!entry || !shouldSkipQuestion(entry.category, entry.item)) break;
+            currentQuestionIndex -= 1;
         }
-    });
+        showCurrentQuestion();
+    }
 
-    // Display summary
+    function handleSkip() {
+        const entry = questionFlow[currentQuestionIndex];
+        if (entry) {
+            userResponses[entry.item.label] = 'skipped';
+        }
+        currentQuestionIndex += 1;
+        saveUserData();
+        showCurrentQuestion();
+    }
+
     function displaySummary() {
         let totalIncome = 0;
-        let totalSpending = 0;
-        
-        // Calculate totals
+        let totalSpendingMonthly = 0;
+
         for (const category of spendingCategories) {
             if (category.title === 'Income') {
-                const monthlyIncome = parseFloat(userResponses['Total Monthly Income']) || 0;
-                const irregularIncome = parseFloat(userResponses['Annual Irregular Income']) || 0;
+                const monthlyIncome = toNumber(userResponses['Total Monthly Income']);
+                const irregularIncome = toNumber(userResponses['Annual Irregular Income']);
                 totalIncome = (monthlyIncome * 12) + irregularIncome;
                 continue;
             }
-            
+
             for (const item of category.items) {
+                if (item.label === 'Mortgage Principal' || item.label === 'Mortgage Interest Rate') continue;
                 const value = userResponses[item.label];
-                // Skip Mortgage Principal as it's handled separately
-                if (item.label === 'Mortgage Principal') continue;
-                
-                if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
-                    totalSpending += parseFloat(value);
+                const numeric = toNumber(value);
+                if (value && value !== 'skipped' && numeric > 0) {
+                    totalSpendingMonthly += numeric;
                 }
             }
-            
-            // Handle special case for mortgage principal
+
             if (category.title === 'Housing') {
-                const mortgagePrincipal = parseFloat(userResponses['Mortgage Principal']) || 0;
-                if (mortgagePrincipal > 0) {
-                    totalSpending += mortgagePrincipal;
-                }
+                const mortgagePrincipal = toNumber(userResponses['Mortgage Principal']);
+                if (mortgagePrincipal > 0) totalSpendingMonthly += mortgagePrincipal;
             }
         }
-        
-        // Category colors
+
         const categoryColors = {
             'Income': '#4caf50',
             'Housing': '#2196f3',
@@ -707,94 +761,92 @@
             'Financial Obligations': '#ff5722',
             'Other': '#607d8b'
         };
-        
+
+        const answeredCount = Object.values(userResponses).filter(value => value !== undefined && value !== null && value !== '' && value !== 'skipped').length;
+
         let html = '<div style="text-align: center; margin-bottom: 20px;">';
-        html += `<div style="font-size: 24px; color: #4caf50; margin-bottom: 10px;">Total Annual Income: $${totalIncome.toLocaleString()}</div>`;
+        html += `<div style="font-size: 15px; color: #81c9ff; margin-bottom: 10px;">${questionnaireMode === 'quick' ? 'Quick setup complete' : 'Detailed setup complete'} • ${answeredCount} answers saved</div>`;
+        html += `<div style="font-size: 24px; color: #4caf50; margin-bottom: 10px;">Total Annual Income: $${Math.round(totalIncome).toLocaleString()}</div>`;
         html += '</div>';
-        
+
         html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
-        
-        // Process each category
+
         for (const category of spendingCategories) {
             if (category.title === 'Income') continue;
-            
             let categoryTotal = 0;
             const categoryItems = [];
-            
+
             for (const item of category.items) {
+                if (item.label === 'Mortgage Principal' || item.label === 'Mortgage Interest Rate') continue;
                 const value = userResponses[item.label];
-                // Skip Mortgage Principal as it's handled separately
-                if (item.label === 'Mortgage Principal') continue;
-                
-                if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
-                    const numValue = parseFloat(value);
+                const numValue = toNumber(value);
+                if (value && value !== 'skipped' && numValue > 0) {
                     categoryTotal += numValue;
-                    categoryItems.push({
-                        name: item.label,
-                        value: numValue
-                    });
+                    categoryItems.push({ name: item.label, value: numValue });
                 }
             }
-            
-            // Handle special case for mortgage principal
+
             if (category.title === 'Housing') {
-                const mortgagePrincipal = parseFloat(userResponses['Mortgage Principal']) || 0;
+                const mortgagePrincipal = toNumber(userResponses['Mortgage Principal']);
                 if (mortgagePrincipal > 0) {
                     categoryTotal += mortgagePrincipal;
-                    categoryItems.push({
-                        name: 'Mortgage Principal',
-                        value: mortgagePrincipal
-                    });
+                    categoryItems.push({ name: 'Mortgage Principal', value: mortgagePrincipal });
                 }
             }
-            
+
             if (categoryTotal > 0) {
-                const percentage = ((categoryTotal * 12) / totalIncome * 100).toFixed(1);
+                const percentage = totalIncome > 0 ? ((categoryTotal * 12) / totalIncome * 100).toFixed(1) : '0.0';
                 const color = categoryColors[category.title] || '#666';
-                
                 html += `<div style="background: #333; border-radius: 10px; padding: 15px; border-left: 4px solid ${color};">`;
                 html += `<div style="font-size: 18px; font-weight: bold; color: ${color}; margin-bottom: 10px;">${category.title}</div>`;
-                html += `<div style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Annual: $${(categoryTotal * 12).toLocaleString()} (${percentage}%)</div>`;
-                
-                // Add subcategories
+                html += `<div style="font-size: 14px; color: #ccc; margin-bottom: 15px;">Annual: $${Math.round(categoryTotal * 12).toLocaleString()} (${percentage}%)</div>`;
                 html += '<div style="font-size: 12px; color: #999;">';
                 for (const item of categoryItems) {
-                    const subPercentage = ((item.value * 12) / totalIncome * 100).toFixed(1);
+                    const subPercentage = totalIncome > 0 ? ((item.value * 12) / totalIncome * 100).toFixed(1) : '0.0';
                     html += `<div style="margin: 5px 0; padding: 5px; background: #444; border-radius: 5px;">`;
                     html += `<span style="color: #ccc;">${item.name}</span>`;
-                    html += `<span style="float: right; color: ${color};">$${(item.value * 12).toLocaleString()} (${subPercentage}%)</span>`;
+                    html += `<span style="float: right; color: ${color};">$${Math.round(item.value * 12).toLocaleString()} (${subPercentage}%)</span>`;
                     html += '</div>';
                 }
                 html += '</div>';
                 html += '</div>';
             }
         }
-        
+
         html += '</div>';
-        
-        // Add summary section
-        html += '<div style="margin-top: 30px; padding: 20px; background: #333; border-radius: 10px;">';
-        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">';
-        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #4caf50;">Annual Income</div><div style="font-size: 24px; color: #4caf50; font-weight: bold;">$${totalIncome.toLocaleString()}</div></div>`;
-        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #ff5252;">Annual Spending</div><div style="font-size: 24px; color: #ff5252; font-weight: bold;">$${(totalSpending * 12).toLocaleString()}</div></div>`;
-        html += '</div>';
-        
-        const surplus = totalIncome - (totalSpending * 12);
+        const annualSpending = totalSpendingMonthly * 12;
+        const surplus = totalIncome - annualSpending;
         const surplusColor = surplus >= 0 ? '#4caf50' : '#ff5252';
         const surplusText = surplus >= 0 ? 'Surplus' : 'Deficit';
-        
-        html += `<div style="text-align: center; font-size: 24px; color: ${surplusColor}; font-weight: bold;">${surplusText}: $${Math.abs(surplus).toLocaleString()}</div>`;
+
+        html += '<div style="margin-top: 30px; padding: 20px; background: #333; border-radius: 10px;">';
+        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">';
+        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #4caf50;">Annual Income</div><div style="font-size: 24px; color: #4caf50; font-weight: bold;">$${Math.round(totalIncome).toLocaleString()}</div></div>`;
+        html += `<div style="text-align: center;"><div style="font-size: 18px; color: #ff5252;">Annual Spending</div><div style="font-size: 24px; color: #ff5252; font-weight: bold;">$${Math.round(annualSpending).toLocaleString()}</div></div>`;
         html += '</div>';
-        
+        html += `<div style="text-align: center; font-size: 24px; color: ${surplusColor}; font-weight: bold;">${surplusText}: $${Math.abs(Math.round(surplus)).toLocaleString()}</div>`;
+        html += '</div>';
+
         summaryContent.innerHTML = html;
+        totalAmount.textContent = `${surplusText}: $${Math.abs(Math.round(surplus)).toLocaleString()} / year`;
     }
 
-    // Edit button click
-    editBtn.addEventListener('click', function() {
-        showQuestionnaireView();
+    quickSetupBtn.addEventListener('click', () => startQuestionnaire('quick'));
+    detailedSetupBtn.addEventListener('click', () => startQuestionnaire('detailed'));
+    nextBtn.addEventListener('click', handleNext);
+    backBtn.addEventListener('click', handleBack);
+    skipBtn.addEventListener('click', handleSkip);
+    editBtn.addEventListener('click', showSetupChoiceView);
+    goDashboardBtn.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
+
+    document.addEventListener('keydown', function(event) {
+        if (questionnaireView.style.display !== 'block') return;
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleNext();
+        }
     });
 
-    // Logout functionality
     logoutBtn.onclick = function() {
         auth.signOut();
     };

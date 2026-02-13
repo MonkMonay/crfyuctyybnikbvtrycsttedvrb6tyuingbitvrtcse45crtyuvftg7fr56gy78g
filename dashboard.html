@@ -149,6 +149,98 @@
             padding: 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+
+        .panel {
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 24px;
+        }
+
+        .panel-title {
+            margin: 0 0 16px;
+            font-size: 20px;
+            color: #4caf50;
+        }
+
+        .sankey-container {
+            width: 100%;
+            min-height: 430px;
+            position: relative;
+        }
+
+        .empty-state {
+            background: #1c1c1c;
+            border: 1px dashed #444;
+            border-radius: 12px;
+            color: #bbb;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .checklist {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checklist-item {
+            background: #333;
+            border: 1px solid #3f3f3f;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .checklist-item strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .checklist-item span {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.35;
+        }
+
+        .status-pill {
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .status-done {
+            background: rgba(76, 175, 80, 0.18);
+            color: #7de281;
+            border: 1px solid rgba(76, 175, 80, 0.45);
+        }
+
+        .status-progress {
+            background: rgba(255, 193, 7, 0.16);
+            color: #ffda68;
+            border: 1px solid rgba(255, 193, 7, 0.45);
+        }
+
+        .status-next {
+            background: rgba(33, 150, 243, 0.16);
+            color: #81c9ff;
+            border: 1px solid rgba(33, 150, 243, 0.45);
+        }
         
         .content-wrapper {
             display: flex;
@@ -164,6 +256,10 @@
             .ad-sidebar {
                 width: 100%;
                 min-height: auto;
+            }
+
+            .checklist-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -247,7 +343,7 @@
                          data-ad-client="ca-pub-2901233728197269"
                          data-ad-slot="YOUR_AD_SLOT_ID"
                          data-ad-format="auto"
-                         data-full-width-responsive="true"></script>
+                         data-full-width-responsive="true"></ins>
                     <script>
                          (adsbygoogle = window.adsbygoogle || []).push({});
                     </script>
@@ -256,7 +352,7 @@
             
             <!-- Main Content -->
             <div class="main-content">
-                <h2 style="color:#4caf50;text-align:center;margin-top:40px;">Your Financial Overview</h2>
+                <h2 style="color:#4caf50;text-align:center;margin-top:10px;">Your Financial Overview</h2>
                 
                 <!-- Summary Cards -->
                 <div id="summaryCards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
@@ -267,21 +363,38 @@
                 <div id="timePeriod" style="text-align: center; color: #999; margin-bottom: 20px; font-size: 14px;">
                     Annual Overview
                 </div>
+
+                <div class="panel" style="margin-bottom: 30px;">
+                    <h3 class="panel-title">Money Flow (Sankey)</h3>
+                    <div id="chartEmptyState" class="empty-state" style="display: none;"></div>
+                    <div id="sankeyChart" class="sankey-container"></div>
+                </div>
                 
                 <!-- Charts Container -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px;">
                     <!-- Income Chart -->
-                    <div style="background: #2a2a2a; border-radius: 15px; padding: 25px;">
+                    <div class="panel">
                         <h3 style="color: #4caf50; text-align: center; margin-bottom: 20px; font-size: 20px;">Income Sources</h3>
                         <div id="incomeChart" style="width: 100%; height: 350px;"></div>
                         <div id="incomeLegend" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
                     
                     <!-- Expenses Chart -->
-                    <div style="background: #2a2a2a; border-radius: 15px; padding: 25px;">
+                    <div class="panel">
                         <h3 style="color: #ff5252; text-align: center; margin-bottom: 20px; font-size: 20px;">Expense Categories</h3>
                         <div id="expenseChart" style="width: 100%; height: 350px;"></div>
                         <div id="expenseLegend" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="checklist-grid">
+                    <div class="panel">
+                        <h3 class="panel-title">Next Best Actions</h3>
+                        <ul id="actionChecklist" class="checklist"></ul>
+                    </div>
+                    <div class="panel">
+                        <h3 class="panel-title">Budget App Excellence Roadmap</h3>
+                        <ul id="productRoadmap" class="checklist"></ul>
                     </div>
                 </div>
             </div>
@@ -314,7 +427,7 @@
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                     <script>
-                         (adsbygoogle = window.adsgoogle || []).push({});
+                         (adsbygoogle = window.adsbygoogle || []).push({});
                     </script>
                 </div>
                 
@@ -355,6 +468,7 @@
     </div>
     <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
     <style>
         #incomeChart, #expenseChart {
             font-family: 'Montserrat', Arial, sans-serif;
@@ -479,6 +593,12 @@
         ]}
     ];
 
+    const chartEmptyState = document.getElementById('chartEmptyState');
+    const sankeyChartContainer = document.getElementById('sankeyChart');
+    let latestModel = null;
+    let sankeyResizeTimer = null;
+    let isSankeyResizeBound = false;
+
     auth.onAuthStateChanged(function(user) {
         if (user) {
             welcome.textContent = `You're logged in as: ${user.email}`;
@@ -488,175 +608,455 @@
             window.location.href = 'login.html';
         }
     });
+
     logoutBtn.onclick = function() {
         auth.signOut();
     };
 
-    function loadSankeyData(uid) {
-        db.collection('users').doc(uid).collection('spending').doc('categories').get().then(doc => {
-            if (!doc.exists) {
-                console.log('No spending data found');
-                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data available. Please complete the bank questionnaire first.</div>';
-                return;
+    function toAmount(value) {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function showChartState(message) {
+        chartEmptyState.style.display = 'block';
+        chartEmptyState.textContent = message;
+        sankeyChartContainer.innerHTML = '';
+    }
+
+    function hideChartState() {
+        chartEmptyState.style.display = 'none';
+        chartEmptyState.textContent = '';
+    }
+
+    function renderSummaryMessage(message) {
+        document.getElementById('summaryCards').innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">${message}</div>`;
+        document.getElementById('incomeChart').innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">No data available</div>';
+        document.getElementById('expenseChart').innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">No data available</div>';
+        document.getElementById('incomeLegend').innerHTML = '';
+        document.getElementById('expenseLegend').innerHTML = '';
+    }
+
+    function buildFinancialModel(data) {
+        const incomeSources = [];
+        const primaryIncome = toAmount(data['Primary Monthly Income']);
+        const additionalIncome = toAmount(data['Additional Monthly Income']);
+        const irregularIncome = toAmount(data['Annual Irregular Income']);
+        const fallbackMonthlyIncome = toAmount(data['Total Monthly Income']);
+        const fallbackAnnualIncome = toAmount(data['Total Annual Income']);
+
+        if (primaryIncome > 0) {
+            incomeSources.push({
+                name: data['Primary Income Source'] || 'Primary Income',
+                value: primaryIncome * 12
+            });
+        }
+        if (additionalIncome > 0) {
+            incomeSources.push({
+                name: 'Additional Income',
+                value: additionalIncome * 12
+            });
+        }
+        if (irregularIncome > 0) {
+            incomeSources.push({
+                name: 'Irregular Income',
+                value: irregularIncome
+            });
+        }
+        if (incomeSources.length === 0 && fallbackMonthlyIncome > 0) {
+            incomeSources.push({ name: 'Total Income', value: fallbackMonthlyIncome * 12 });
+        }
+        if (incomeSources.length === 0 && fallbackAnnualIncome > 0) {
+            incomeSources.push({ name: 'Total Income', value: fallbackAnnualIncome });
+        }
+
+        const categoryTotals = {};
+        const subcategoryTotals = {};
+        const savingsItems = new Set(['Emergency Fund', 'Retirement Savings', 'Investment Accounts', 'College Savings']);
+        const nonSpendFields = new Set(['Mortgage Interest Rate']);
+        let totalSavingsMonthly = 0;
+        let answeredCount = 0;
+
+        Object.keys(data || {}).forEach(key => {
+            const value = data[key];
+            if (value !== undefined && value !== null && value !== '' && value !== 'skipped') {
+                answeredCount += 1;
             }
-            const data = doc.data();
-            console.log('Loaded data:', data);
-            
-            // Store data globally for access in click handlers
-            window.sankeyData = data;
-            
-            // Calculate income sources
-            const incomeSources = [];
-            const primaryIncome = parseFloat(data['Primary Monthly Income']) || 0;
-            const additionalIncome = parseFloat(data['Additional Monthly Income']) || 0;
-            
-            if (primaryIncome > 0) {
-                incomeSources.push({
-                    name: data['Primary Income Source'] || 'Primary Income',
-                    amount: primaryIncome * 12
-                });
+        });
+
+        for (const category of spendingCategories) {
+            if (category.title === 'Income') continue;
+
+            let categoryTotal = 0;
+            for (const item of category.items) {
+                if (item.label === 'Mortgage Principal' || nonSpendFields.has(item.label)) continue;
+                const raw = data[item.label];
+                const numeric = toAmount(raw);
+                if (!raw || raw === 'skipped' || numeric <= 0) continue;
+
+                if (savingsItems.has(item.label)) {
+                    totalSavingsMonthly += numeric;
+                } else {
+                    categoryTotal += numeric;
+                }
+                subcategoryTotals[item.label] = numeric;
             }
-            
-            if (additionalIncome > 0) {
-                incomeSources.push({
-                    name: 'Additional Income',
-                    amount: additionalIncome * 12
-                });
-            }
-            
-            const irregularIncome = parseFloat(data['Annual Irregular Income']) || 0;
-            if (irregularIncome > 0) {
-                incomeSources.push({
-                    name: 'Irregular Income',
-                    amount: irregularIncome
-                });
-            }
-            
-            // If no income sources found, use total income
-            if (incomeSources.length === 0) {
-                const totalMonthlyIncome = parseFloat(data['Total Monthly Income']) || 0;
-                if (totalMonthlyIncome > 0) {
-                    incomeSources.push({
-                        name: 'Total Income',
-                        amount: totalMonthlyIncome * 12
-                    });
+
+            if (category.title === 'Housing') {
+                const mortgagePrincipal = toAmount(data['Mortgage Principal']);
+                if (mortgagePrincipal > 0) {
+                    categoryTotal += mortgagePrincipal;
+                    subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
                 }
             }
-            
-            // Calculate category totals and subcategory totals
-            const categoryTotals = {};
-            const subcategoryTotals = {};
-            
-            // Define savings items
-            const savingsItems = ['Emergency Fund', 'Retirement Savings', 'Investment Accounts', 'College Savings'];
-            
-            for (const category of spendingCategories) {
-                if (category.title === 'Income') continue;
-                
-                let categoryTotal = 0;
-                let savingsTotal = 0;
-                
-                for (const item of category.items) {
-                    const value = data[item.label];
-                    // Skip Mortgage Principal as it's handled separately
-                    if (item.label === 'Mortgage Principal') continue;
-                    
-                    if (value && value !== 'skipped' && !isNaN(parseFloat(value))) {
-                        const numValue = parseFloat(value);
-                        
-                        // Check if this is a savings item
-                        if (savingsItems.includes(item.label)) {
-                            savingsTotal += numValue;
-                            subcategoryTotals[item.label] = numValue;
-                        } else {
-                            categoryTotal += numValue;
-                            subcategoryTotals[item.label] = numValue;
-                        }
-                    }
+
+            if (categoryTotal > 0) {
+                categoryTotals[category.title] = categoryTotal;
+            }
+        }
+
+        if (totalSavingsMonthly > 0) {
+            categoryTotals['Savings'] = totalSavingsMonthly;
+        }
+
+        const totalIncome = incomeSources.reduce((sum, source) => sum + source.value, 0);
+        const totalExpenses = Object.values(categoryTotals).reduce((sum, monthly) => sum + (monthly * 12), 0);
+        const surplus = totalIncome - totalExpenses;
+
+        return {
+            incomeSources,
+            categoryTotals,
+            subcategoryTotals,
+            totalIncome,
+            totalExpenses,
+            surplus,
+            answeredCount
+        };
+    }
+
+    function getChartTooltip() {
+        let tooltip = d3.select('#chartTooltip');
+        if (tooltip.empty()) {
+            tooltip = d3.select('body').append('div')
+                .attr('id', 'chartTooltip')
+                .attr('class', 'chart-tooltip')
+                .style('opacity', 0)
+                .style('position', 'absolute')
+                .style('background', 'rgba(0, 0, 0, 0.9)')
+                .style('color', '#fff')
+                .style('padding', '12px')
+                .style('border-radius', '8px')
+                .style('pointer-events', 'none')
+                .style('font-size', '13px')
+                .style('z-index', '10000');
+        }
+        return tooltip;
+    }
+
+    function bindSankeyResize() {
+        if (isSankeyResizeBound) return;
+        isSankeyResizeBound = true;
+        window.addEventListener('resize', () => {
+            clearTimeout(sankeyResizeTimer);
+            sankeyResizeTimer = setTimeout(() => {
+                if (latestModel && latestModel.totalIncome > 0 && Object.keys(latestModel.categoryTotals).length > 0) {
+                    createSankeyChart(latestModel);
                 }
-                
-                // Handle special case for mortgage principal
-                if (category.title === 'Housing') {
-                    const mortgagePrincipal = parseFloat(data['Mortgage Principal']) || 0;
-                    if (mortgagePrincipal > 0) {
-                        categoryTotal += mortgagePrincipal;
-                        subcategoryTotals['Mortgage Principal'] = mortgagePrincipal;
-                    }
-                }
-                
-                if (categoryTotal > 0) {
-                    categoryTotals[category.title] = categoryTotal;
-                }
-            }
-            
-            // Add savings as a separate category
-            const totalSavings = savingsItems.reduce((total, item) => {
-                return total + (parseFloat(data[item]) || 0);
-            }, 0);
-            
-            if (totalSavings > 0) {
-                categoryTotals['Savings'] = totalSavings;
-            }
-            
-            console.log('Income sources:', incomeSources);
-            console.log('Category totals:', categoryTotals);
-            console.log('Subcategory totals:', subcategoryTotals);
-            
-            if (incomeSources.length === 0) {
-                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No income data found. Please complete the income section of the bank questionnaire.</div>';
-                return;
-            }
-            
-            if (Object.keys(categoryTotals).length === 0) {
-                document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">No spending data found. Please complete the spending section of the bank questionnaire.</div>';
-                return;
-            }
-            
-            createSunburstChart(incomeSources, categoryTotals, subcategoryTotals);
-        }).catch(error => {
-            console.error('Error loading data:', error);
-            document.getElementById('sankey_chart').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px;">Error loading data. Please try again.</div>';
+            }, 180);
         });
     }
 
-    function createSunburstChart(incomeSources, categoryTotals, subcategoryTotals) {
-        // Calculate totals
-        const totalIncome = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-        const totalExpenses = Object.values(categoryTotals).reduce((sum, val) => sum + (val * 12), 0);
-        const surplus = totalIncome - totalExpenses;
-        
-        if (totalIncome === 0) {
-            document.getElementById('summaryCards').innerHTML = '<div style="text-align: center; color: #ccc; padding: 40px; grid-column: 1 / -1;">No income data found. Please complete the income section of the bank questionnaire.</div>';
-            return;
+    async function loadSankeyData(uid) {
+        showChartState('Loading your money flow...');
+        renderProductRoadmap();
+        try {
+            const doc = await db.collection('users').doc(uid).collection('spending').doc('categories').get();
+            if (!doc.exists) {
+                renderSummaryMessage('No spending data available. Complete the Bank setup to unlock your dashboard.');
+                renderActionChecklist(null);
+                showChartState('No spending data available yet. Complete your Bank setup first.');
+                return;
+            }
+
+            const data = doc.data() || {};
+            window.sankeyData = data;
+            const model = buildFinancialModel(data);
+            latestModel = model;
+
+            if (model.totalIncome <= 0) {
+                renderSummaryMessage('No income data found. Complete the income questions in Bank setup.');
+                renderActionChecklist(model);
+                showChartState('No income data found. Complete the income part of the Bank setup.');
+                return;
+            }
+
+            if (Object.keys(model.categoryTotals).length === 0) {
+                renderSummaryMessage('No expense data found. Add monthly spending in the Bank setup.');
+                renderActionChecklist(model);
+                showChartState('No spending data found. Add expenses in Bank setup to render the Sankey flow.');
+                return;
+            }
+
+            hideChartState();
+            createOverviewDashboard(model);
+            renderActionChecklist(model);
+            bindSankeyResize();
+        } catch (error) {
+            console.error('Error loading data:', error);
+            renderSummaryMessage('Error loading your dashboard. Please refresh and try again.');
+            renderActionChecklist(null);
+            showChartState('We could not load your financial data. Please refresh and try again.');
         }
-        
-        // Create summary cards
+    }
+
+    function createOverviewDashboard(model) {
+        const { incomeSources, categoryTotals, totalIncome, totalExpenses, surplus } = model;
+
         const summaryCards = document.getElementById('summaryCards');
         summaryCards.innerHTML = `
             <div style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); border-radius: 15px; padding: 25px; color: #fff;">
                 <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">Total Annual Income</div>
-                <div style="font-size: 32px; font-weight: bold;">$${totalIncome.toLocaleString()}</div>
+                <div style="font-size: 32px; font-weight: bold;">$${Math.round(totalIncome).toLocaleString()}</div>
             </div>
             <div style="background: linear-gradient(135deg, #ff5252 0%, #e53935 100%); border-radius: 15px; padding: 25px; color: #fff;">
                 <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">Total Annual Expenses</div>
-                <div style="font-size: 32px; font-weight: bold;">$${totalExpenses.toLocaleString()}</div>
+                <div style="font-size: 32px; font-weight: bold;">$${Math.round(totalExpenses).toLocaleString()}</div>
             </div>
-            <div style="background: linear-gradient(135deg, ${surplus >= 0 ? '#4caf50' : '#ff5252'} 0%, ${surplus >= 0 ? '#45a049' : '#e53935'} 100%); border-radius: 15px; padding: 25px; color: #fff;">
+            <div style="background: linear-gradient(135deg, ${surplus >= 0 ? '#2196f3' : '#ff7043'} 0%, ${surplus >= 0 ? '#1e88e5' : '#f4511e'} 100%); border-radius: 15px; padding: 25px; color: #fff;">
                 <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">${surplus >= 0 ? 'Surplus' : 'Deficit'}</div>
-                <div style="font-size: 32px; font-weight: bold;">$${Math.abs(surplus).toLocaleString()}</div>
-                ${surplus < 0 ? '<div style="font-size: 12px; margin-top: 5px; opacity: 0.9;">You are spending more than you earn</div>' : ''}
+                <div style="font-size: 32px; font-weight: bold;">$${Math.abs(Math.round(surplus)).toLocaleString()}</div>
+                ${surplus < 0 ? '<div style="font-size: 12px; margin-top: 5px; opacity: 0.9;">Spending currently exceeds income</div>' : ''}
             </div>
         `;
-        
-        // Create income donut chart
+
+        createSankeyChart(model);
         createDonutChart('incomeChart', 'incomeLegend', incomeSources, totalIncome, 'Income', '#4caf50');
-        
-        // Create expenses donut chart
         const expenseData = Object.keys(categoryTotals).map(category => ({
             name: category,
             value: categoryTotals[category] * 12
         }));
         createDonutChart('expenseChart', 'expenseLegend', expenseData, totalExpenses, 'Expenses', '#ff5252');
+    }
+
+    function createSankeyChart(model) {
+        const { incomeSources, categoryTotals, totalIncome, totalExpenses, surplus } = model;
+        sankeyChartContainer.innerHTML = '';
+        const width = Math.max(760, sankeyChartContainer.clientWidth || 0);
+        const height = 420;
+
+        const nodes = [{ name: 'Available Income', kind: 'pool' }];
+        const links = [];
+
+        incomeSources.forEach(source => {
+            const sourceIndex = nodes.push({ name: source.name, kind: 'income' }) - 1;
+            links.push({ source: sourceIndex, target: 0, value: source.value });
+        });
+
+        if (totalExpenses > totalIncome) {
+            const deficitNode = nodes.push({ name: 'Debt / Credit', kind: 'debt' }) - 1;
+            links.push({ source: deficitNode, target: 0, value: totalExpenses - totalIncome });
+        }
+
+        Object.entries(categoryTotals).forEach(([category, monthlyAmount]) => {
+            const annualAmount = monthlyAmount * 12;
+            if (annualAmount <= 0) return;
+            const kind = category === 'Savings' ? 'savings' : 'expense';
+            const categoryNode = nodes.push({ name: category, kind }) - 1;
+            links.push({ source: 0, target: categoryNode, value: annualAmount });
+        });
+
+        if (surplus > 0) {
+            const surplusNode = nodes.push({ name: 'Unallocated Surplus', kind: 'surplus' }) - 1;
+            links.push({ source: 0, target: surplusNode, value: surplus });
+        }
+
+        const graph = d3.sankey()
+            .nodeWidth(18)
+            .nodePadding(18)
+            .extent([[14, 20], [width - 14, height - 20]])({
+                nodes: nodes.map(node => ({ ...node })),
+                links: links.map(link => ({ ...link }))
+            });
+
+        const nodeColors = {
+            income: '#4caf50',
+            pool: '#81c784',
+            expense: '#ef5350',
+            savings: '#26a69a',
+            surplus: '#42a5f5',
+            debt: '#ffb300'
+        };
+
+        const tooltip = getChartTooltip();
+        const svg = d3.select('#sankeyChart')
+            .append('svg')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .attr('width', '100%')
+            .attr('height', height);
+
+        svg.append('g')
+            .attr('fill', 'none')
+            .selectAll('path')
+            .data(graph.links)
+            .join('path')
+            .attr('d', d3.sankeyLinkHorizontal())
+            .attr('stroke', link => {
+                const sourceKind = link.source.kind;
+                const targetKind = link.target.kind;
+                const color = sourceKind === 'income' ? nodeColors.income : nodeColors[targetKind] || '#777';
+                return color;
+            })
+            .attr('stroke-opacity', 0.46)
+            .attr('stroke-width', link => Math.max(1, link.width))
+            .on('mousemove', (event, link) => {
+                tooltip.style('opacity', 1)
+                    .html(`<strong>${link.source.name} -> ${link.target.name}</strong><br>$${Math.round(link.value).toLocaleString()} / year`)
+                    .style('left', `${event.pageX + 14}px`)
+                    .style('top', `${event.pageY - 10}px`);
+            })
+            .on('mouseleave', () => {
+                tooltip.style('opacity', 0);
+            });
+
+        const nodeGroup = svg.append('g')
+            .selectAll('g')
+            .data(graph.nodes)
+            .join('g');
+
+        nodeGroup.append('rect')
+            .attr('x', node => node.x0)
+            .attr('y', node => node.y0)
+            .attr('height', node => Math.max(4, node.y1 - node.y0))
+            .attr('width', node => node.x1 - node.x0)
+            .attr('fill', node => nodeColors[node.kind] || '#7a7a7a')
+            .attr('rx', 3)
+            .attr('ry', 3)
+            .on('mousemove', (event, node) => {
+                const nodeValue = Math.max(
+                    d3.sum(node.sourceLinks, link => link.value),
+                    d3.sum(node.targetLinks, link => link.value)
+                );
+                tooltip.style('opacity', 1)
+                    .html(`<strong>${node.name}</strong><br>$${Math.round(nodeValue).toLocaleString()} / year`)
+                    .style('left', `${event.pageX + 14}px`)
+                    .style('top', `${event.pageY - 10}px`);
+            })
+            .on('mouseleave', () => {
+                tooltip.style('opacity', 0);
+            });
+
+        nodeGroup.append('text')
+            .attr('x', node => node.x0 < width / 2 ? node.x1 + 8 : node.x0 - 8)
+            .attr('y', node => (node.y0 + node.y1) / 2)
+            .attr('dy', '0.35em')
+            .attr('text-anchor', node => node.x0 < width / 2 ? 'start' : 'end')
+            .style('font-size', '12px')
+            .style('fill', '#ddd')
+            .text(node => node.name);
+    }
+
+    function renderActionChecklist(model) {
+        const container = document.getElementById('actionChecklist');
+        if (!model) {
+            container.innerHTML = '';
+            [
+                { status: 'progress', title: 'Complete Bank Setup', detail: 'Add income and key spending categories to unlock insights.' },
+                { status: 'next', title: 'Enable Money Flow View', detail: 'The Sankey chart appears automatically once data exists.' },
+                { status: 'next', title: 'Create a Monthly Surplus', detail: 'Target positive cash flow by trimming high-impact categories.' }
+            ].forEach(item => container.appendChild(buildChecklistItem(item)));
+            return;
+        }
+
+        const housingRatio = model.totalIncome > 0 ? ((model.categoryTotals['Housing'] || 0) * 12) / model.totalIncome : 0;
+        const foodLifestyle = ((model.categoryTotals['Food & Dining'] || 0) + (model.categoryTotals['Entertainment & Lifestyle'] || 0)) * 12;
+        const lifestyleRatio = model.totalIncome > 0 ? foodLifestyle / model.totalIncome : 0;
+        const emergencyFund = toAmount(window.sankeyData['Emergency Fund']);
+        const retirement = toAmount(window.sankeyData['Retirement Savings']);
+        const debtMonthly = toAmount(window.sankeyData['Credit Cards']) + toAmount(window.sankeyData['Personal Loans']) + toAmount(window.sankeyData['Student Loans']) + toAmount(window.sankeyData['Medical Debt']);
+
+        const actions = [
+            {
+                status: model.answeredCount >= 20 ? 'done' : 'progress',
+                title: 'Complete profile quality',
+                detail: `${model.answeredCount} answers captured. Reach 20+ fields for stronger recommendations.`
+            },
+            {
+                status: model.totalIncome > 0 ? 'done' : 'progress',
+                title: 'Income visibility',
+                detail: model.totalIncome > 0 ? 'Income data is complete and flowing into your dashboard.' : 'Add monthly income to unlock accurate budgeting.'
+            },
+            {
+                status: housingRatio <= 0.35 ? 'done' : 'progress',
+                title: 'Housing affordability',
+                detail: `Housing is ${(housingRatio * 100).toFixed(1)}% of income. Keep it near 35% or below.`
+            },
+            {
+                status: emergencyFund > 0 ? 'done' : 'progress',
+                title: 'Emergency buffer',
+                detail: emergencyFund > 0 ? `You save $${Math.round(emergencyFund).toLocaleString()} monthly toward emergency cash.` : 'Start with a small emergency fund contribution this month.'
+            },
+            {
+                status: retirement > 0 ? 'done' : 'progress',
+                title: 'Retirement contribution',
+                detail: retirement > 0 ? `You contribute $${Math.round(retirement).toLocaleString()} monthly to retirement.` : 'Add a monthly retirement contribution.'
+            },
+            {
+                status: debtMonthly > 0 && model.surplus > 0 ? 'progress' : 'next',
+                title: 'Debt payoff plan',
+                detail: debtMonthly > 0 ? `Debt payments are $${Math.round(debtMonthly).toLocaleString()} per month. Use surplus to accelerate payoff.` : 'No major debt payments detected.'
+            },
+            {
+                status: lifestyleRatio <= 0.25 ? 'done' : 'progress',
+                title: 'Lifestyle spend control',
+                detail: `Food + lifestyle spending is ${(lifestyleRatio * 100).toFixed(1)}% of income.`
+            },
+            {
+                status: model.surplus > 0 ? 'done' : 'progress',
+                title: 'Monthly surplus target',
+                detail: model.surplus > 0 ? `You are currently positive by $${Math.round(model.surplus).toLocaleString()} per year.` : 'Reduce expenses or increase income to move into surplus.'
+            }
+        ];
+
+        container.innerHTML = '';
+        actions.forEach(item => container.appendChild(buildChecklistItem(item)));
+    }
+
+    function renderProductRoadmap() {
+        const roadmap = [
+            { status: 'done', title: 'Sankey Money Flow', detail: 'Annual income and expenses now render in a stable Sankey view.' },
+            { status: 'done', title: 'Action Checklist', detail: 'Dashboard now turns financial data into concrete next steps.' },
+            { status: 'done', title: 'Questionnaire Refactor', detail: 'Bank setup now supports quick mode and a cleaner question flow.' },
+            { status: 'progress', title: 'Category Budgets', detail: 'Add target caps by category with over/under tracking.' },
+            { status: 'progress', title: 'Goal Buckets', detail: 'Support sinking funds for vacations, gifts, and big purchases.' },
+            { status: 'next', title: 'Bill Calendar', detail: 'Track recurring due dates and reminders.' },
+            { status: 'next', title: 'Transaction Sync', detail: 'Import real bank transactions with auto-categorization.' },
+            { status: 'next', title: 'Alert Engine', detail: 'Detect unusual spend spikes and cash flow risk early.' },
+            { status: 'next', title: 'Shared Budgets', detail: 'Household collaboration with roles and shared goals.' },
+            { status: 'next', title: 'Exports & Reports', detail: 'CSV/PDF exports for monthly reviews and tax prep.' }
+        ];
+
+        const container = document.getElementById('productRoadmap');
+        container.innerHTML = '';
+        roadmap.forEach(item => container.appendChild(buildChecklistItem(item)));
+    }
+
+    function buildChecklistItem(item) {
+        const li = document.createElement('li');
+        li.className = 'checklist-item';
+        const statusMap = {
+            done: { label: 'Live', className: 'status-done' },
+            progress: { label: 'In Progress', className: 'status-progress' },
+            next: { label: 'Next', className: 'status-next' }
+        };
+        const status = statusMap[item.status] || statusMap.next;
+        li.innerHTML = `
+            <span class="status-pill ${status.className}">${status.label}</span>
+            <div>
+                <strong>${item.title}</strong>
+                <span>${item.detail}</span>
+            </div>
+        `;
+        return li;
     }
     
     function createDonutChart(containerId, legendId, data, total, title, colorScheme) {
@@ -703,19 +1103,8 @@
             .innerRadius(radius * 0.6)
             .outerRadius(radius + 10);
         
-        // Create tooltip
-        const tooltip = d3.select("body").append("div")
-            .attr("class", "chart-tooltip")
-            .style("opacity", 0)
-            .style("position", "absolute")
-            .style("background", "rgba(0, 0, 0, 0.9)")
-            .style("color", "#fff")
-            .style("padding", "12px")
-            .style("border-radius", "8px")
-            .style("pointer-events", "none")
-            .style("font-size", "14px")
-            .style("z-index", "10000")
-            .style("box-shadow", "0 4px 12px rgba(0,0,0,0.3)");
+        // Reuse a single shared tooltip
+        const tooltip = getChartTooltip();
         
         // Draw arcs
         const arcs = svg.selectAll("path")
