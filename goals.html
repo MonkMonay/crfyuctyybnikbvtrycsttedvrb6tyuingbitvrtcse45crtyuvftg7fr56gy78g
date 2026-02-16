@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals - Bonobudget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #222;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .nav {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-item {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 15px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-email {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #ff5252;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            color: #81c784;
+            font-size: 16px;
+            margin-bottom: 18px;
+        }
+
+        .page-title {
+            text-align: center;
+            color: #4caf50;
+            font-size: 32px;
+            margin-bottom: 24px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: linear-gradient(145deg, #2a2a2a, #242424);
+            border: 1px solid #343434;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .summary-label {
+            color: #a6a6a6;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .summary-help {
+            margin-top: 8px;
+            color: #9a9a9a;
+            font-size: 11px;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #222;
+            border: 1px solid #343434;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+        .muted {
+            color: #a7a7a7;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .status-banner {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .status-info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.45);
+            color: #a9d8ff;
+        }
+
+        .status-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.45);
+            color: #9af6a2;
+        }
+
+        .status-error {
+            background: rgba(239, 83, 80, 0.2);
+            border: 1px solid rgba(239, 83, 80, 0.45);
+            color: #ffb8b6;
+        }
+
+        .goal-form {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .field,
+        .select,
+        .textarea {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #3c3c3c;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        .textarea {
+            resize: vertical;
+            min-height: 74px;
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            background: #4caf50;
+        }
+
+        .btn.secondary {
+            background: #455a64;
+        }
+
+        .btn.warn {
+            background: #ff7043;
+        }
+
+        .btn.danger {
+            background: #e53935;
+        }
+
+        .btn.template {
+            background: #2e7d32;
+            margin-top: 8px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            border: 1px solid #3f3f3f;
+            background: #1e1e1e;
+            color: #d3d3d3;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .filter-chip.active {
+            border-color: rgba(76, 175, 80, 0.65);
+            color: #9af6a2;
+            background: rgba(76, 175, 80, 0.16);
+        }
+
+        .goal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .goal-card {
+            background: #2a2a2a;
+            border: 1px solid #393939;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .goal-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .goal-name {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .goal-meta {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .pill.type {
+            background: rgba(33, 150, 243, 0.2);
+            color: #9ed5ff;
+            border-color: rgba(33, 150, 243, 0.45);
+        }
+
+        .pill.priority-high {
+            background: rgba(239, 83, 80, 0.2);
+            color: #ffb8b6;
+            border-color: rgba(239, 83, 80, 0.45);
+        }
+
+        .pill.priority-medium {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffd874;
+            border-color: rgba(255, 193, 7, 0.45);
+        }
+
+        .pill.priority-low {
+            background: rgba(76, 175, 80, 0.2);
+            color: #a8f3ae;
+            border-color: rgba(76, 175, 80, 0.45);
+        }
+
+        .pill.completed {
+            background: rgba(76, 175, 80, 0.2);
+            color: #9af6a2;
+            border-color: rgba(76, 175, 80, 0.45);
+        }
+
+        .goal-stats {
+            display: flex;
+            justify-content: space-between;
+            color: #b9b9b9;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #191919;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+        }
+
+        .goal-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .goal-note {
+            color: #9b9b9b;
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        .goal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .goal-action {
+            font-size: 11px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .goal-action.add {
+            background: #4caf50;
+        }
+
+        .goal-action.custom {
+            background: #2196f3;
+        }
+
+        .goal-action.toggle {
+            background: #ff9800;
+        }
+
+        .goal-action.delete {
+            background: #ef5350;
+        }
+
+        .empty-state {
+            background: #1b1b1b;
+            border: 1px dashed #3f3f3f;
+            border-radius: 10px;
+            padding: 18px;
+            color: #bcbcbc;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .timeline-item {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .timeline-main {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .timeline-sub {
+            color: #a4a4a4;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .timeline-badge {
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .timeline-good { color: #9af6a2; }
+        .timeline-warn { color: #ffd874; }
+        .timeline-danger { color: #ffb8b6; }
+
+        .insight-list {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .insight {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .insight.good { border-color: rgba(76, 175, 80, 0.45); color: #aaf2af; }
+        .insight.warn { border-color: rgba(255, 193, 7, 0.45); color: #ffd874; }
+        .insight.bad { border-color: rgba(239, 83, 80, 0.45); color: #ffb8b6; }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .template-card {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .template-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #cfeecf;
+        }
+
+        .template-sub {
+            margin-top: 4px;
+            color: #a3a3a3;
+            font-size: 11px;
+        }
+
+        @media (max-width: 1180px) {
+            .layout-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .nav {
+                width: 100%;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .goal-form {
+                grid-template-columns: 1fr;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Bonobudget</div>
+        <div class="nav">
+            <div class="nav-item" onclick="window.location.href='dashboard.html'">Dashboard</div>
+            <div class="nav-item" onclick="window.location.href='bank.html'">Bank</div>
+            <div class="nav-item active">Goals</div>
+        </div>
+        <div class="profile">
+            <div class="profile-email" id="userEmail"></div>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="welcome-text" id="welcome"></div>
+        <h1 class="page-title">Goal Planner</h1>
+
+        <div id="goalSummaryCards" class="summary-grid"></div>
+
+        <div class="layout-grid">
+            <div>
+                <div class="panel">
+                    <div class="panel-title">Create Goal</div>
+                    <div class="muted">Add specific targets and monthly contributions to turn your budget into a real plan.</div>
+                    <form id="goalForm" class="goal-form">
+                        <input id="goalName" class="field" type="text" placeholder="Goal name (e.g., Emergency Fund)" required>
+                        <input id="goalTarget" class="field" type="number" min="1" step="1" placeholder="Target amount ($)" required>
+                        <input id="goalCurrent" class="field" type="number" min="0" step="1" placeholder="Current saved ($)">
+                        <input id="goalMonthly" class="field" type="number" min="0" step="1" placeholder="Monthly contribution ($)">
+                        <input id="goalDeadline" class="field" type="date">
+                        <select id="goalType" class="select">
+                            <option>Emergency</option>
+                            <option>Travel</option>
+                            <option>Vehicle</option>
+                            <option>Home</option>
+                            <option>Debt Payoff</option>
+                            <option>Education</option>
+                            <option>General</option>
+                        </select>
+                        <select id="goalPriority" class="select">
+                            <option>High</option>
+                            <option selected>Medium</option>
+                            <option>Low</option>
+                        </select>
+                        <textarea id="goalNotes" class="textarea" placeholder="Optional notes or constraints..."></textarea>
+                        <div class="form-actions" style="grid-column: 1 / -1;">
+                            <button type="submit" class="btn">Add Goal</button>
+                            <button type="button" id="applyMonthlyBtn" class="btn secondary">Apply Monthly Contributions</button>
+                        </div>
+                    </form>
+                    <div id="statusBanner" class="status-banner"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Goal Portfolio</div>
+                    <div class="muted">Track progress, contribute quickly, and close goals as they complete.</div>
+                    <div class="filter-row" id="goalFilters">
+                        <button class="filter-chip active" data-filter="active">Active</button>
+                        <button class="filter-chip" data-filter="all">All</button>
+                        <button class="filter-chip" data-filter="completed">Completed</button>
+                    </div>
+                    <div id="goalsList" class="goal-list"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <div class="panel-title">Milestones & Deadlines</div>
+                    <div class="muted">Prioritize what needs funding first based on urgency and progress.</div>
+                    <div id="milestonesList" class="timeline"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Funding Strategy</div>
+                    <div class="muted">AI-free but data-driven guidance based on your current income, expenses, and goal load.</div>
+                    <div id="strategyInsights" class="insight-list"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Quick Templates</div>
+                    <div class="muted">Use common goal templates and adjust details before saving.</div>
+                    <div class="template-grid" id="goalTemplates">
+                        <div class="template-card">
+                            <div class="template-name">Emergency Fund</div>
+                            <div class="template-sub">Target: $10,000 • Priority: High</div>
+                            <button class="btn template" data-template="emergency">Use</button>
+                        </div>
+                        <div class="template-card">
+                            <div class="template-name">Vacation</div>
+                            <div class="template-sub">Target: $3,000 • Priority: Medium</div>
+                            <button class="btn template" data-template="vacation">Use</button>
+                        </div>
+                        <div class="template-card">
+                            <div class="template-name">New Car</div>
+                            <div class="template-sub">Target: $8,000 • Priority: Medium</div>
+                            <button class="btn template" data-template="car">Use</button>
+                        </div>
+                        <div class="template-card">
+                            <div class="template-name">Home Down Payment</div>
+                            <div class="template-sub">Target: $30,000 • Priority: High</div>
+                            <button class="btn template" data-template="home">Use</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCZhftowlNqPvBMuWJ-5NWqfA-Yb59TehQ",
+            authDomain: "bonobudget.firebaseapp.com",
+            projectId: "bonobudget",
+            storageBucket: "bonobudget.firebasestorage.app",
+            messagingSenderId: "42259683918",
+            appId: "1:42259683918:web:ab931da84be09ffa69811f",
+            measurementId: "G-ZBM8LKGR01"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+
+        let currentUser = null;
+        let currentFilter = 'active';
+        let planningDocData = {};
+        let goals = [];
+        let spendingData = {};
+
+        const welcome = document.getElementById('welcome');
+        const userEmail = document.getElementById('userEmail');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const goalSummaryCards = document.getElementById('goalSummaryCards');
+        const goalForm = document.getElementById('goalForm');
+        const goalFilters = document.getElementById('goalFilters');
+        const goalsList = document.getElementById('goalsList');
+        const milestonesList = document.getElementById('milestonesList');
+        const strategyInsights = document.getElementById('strategyInsights');
+        const goalTemplates = document.getElementById('goalTemplates');
+        const applyMonthlyBtn = document.getElementById('applyMonthlyBtn');
+        const statusBanner = document.getElementById('statusBanner');
+
+        function toAmount(value) {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function createId(prefix) {
+            return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        }
+
+        function formatMoney(value) {
+            return `$${Math.round(toAmount(value)).toLocaleString()}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function toDateInputValue(value) {
+            if (!value) return '';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return String(value);
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function normalizeGoals(rawGoals) {
+            return (Array.isArray(rawGoals) ? rawGoals : [])
+                .map(goal => {
+                    const target = Math.max(0, toAmount(goal.target));
+                    const current = Math.max(0, Math.min(target || Infinity, toAmount(goal.current)));
+                    const monthly = Math.max(0, toAmount(goal.monthly));
+                    const deadline = toDateInputValue(goal.deadline);
+                    const name = String(goal.name || '').trim();
+                    const priority = ['High', 'Medium', 'Low'].includes(goal.priority) ? goal.priority : 'Medium';
+                    const type = String(goal.type || 'General');
+                    const notes = String(goal.notes || '');
+                    const status = (target > 0 && current >= target) ? 'completed' : 'active';
+
+                    return {
+                        id: goal.id || createId('goal'),
+                        name,
+                        target,
+                        current,
+                        monthly,
+                        deadline,
+                        priority,
+                        type,
+                        notes,
+                        status,
+                        createdAt: goal.createdAt || new Date().toISOString()
+                    };
+                })
+                .filter(goal => goal.name && goal.target > 0);
+        }
+
+        function getFinancialSnapshot(data) {
+            const raw = data || {};
+
+            let monthlyIncome = toAmount(raw['Total Monthly Income']);
+            if (monthlyIncome <= 0) {
+                monthlyIncome = toAmount(raw['Primary Monthly Income']) + toAmount(raw['Additional Monthly Income']);
+            }
+            monthlyIncome += toAmount(raw['Annual Irregular Income']) / 12;
+            if (monthlyIncome <= 0) {
+                monthlyIncome = toAmount(raw['Total Annual Income']) / 12;
+            }
+
+            const excluded = new Set([
+                'Primary Income Source',
+                'Primary Monthly Income',
+                'Has Additional Income',
+                'Additional Income Sources',
+                'Additional Monthly Income',
+                'Total Monthly Income',
+                'Has Irregular Income',
+                'Irregular Income Types',
+                'Annual Irregular Income',
+                'Total Annual Income',
+                'Mortgage Interest Rate'
+            ]);
+
+            let monthlyExpenses = 0;
+            Object.keys(raw).forEach(key => {
+                if (excluded.has(key)) return;
+                const value = raw[key];
+                if (value === 'skipped') return;
+                const numeric = toAmount(value);
+                if (numeric > 0) {
+                    monthlyExpenses += numeric;
+                }
+            });
+
+            const debtMonthly = toAmount(raw['Credit Cards']) + toAmount(raw['Student Loans']) + toAmount(raw['Personal Loans']) + toAmount(raw['Medical Debt']);
+            const savingsMonthly = toAmount(raw['Emergency Fund']) + toAmount(raw['Retirement Savings']) + toAmount(raw['Investment Accounts']) + toAmount(raw['College Savings']);
+
+            return {
+                monthlyIncome,
+                monthlyExpenses,
+                monthlySurplus: monthlyIncome - monthlyExpenses,
+                debtMonthly,
+                savingsMonthly
+            };
+        }
+
+        function getFilteredGoals() {
+            if (currentFilter === 'all') return [...goals];
+            if (currentFilter === 'completed') return goals.filter(goal => goal.status === 'completed');
+            return goals.filter(goal => goal.status !== 'completed');
+        }
+
+        function sortGoals(inputGoals) {
+            return [...inputGoals].sort((a, b) => {
+                const aComplete = a.status === 'completed' ? 1 : 0;
+                const bComplete = b.status === 'completed' ? 1 : 0;
+                if (aComplete !== bComplete) return aComplete - bComplete;
+
+                const priorityDiff = (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
+                if (priorityDiff !== 0) return priorityDiff;
+
+                if (a.deadline && b.deadline) {
+                    const deadlineDiff = a.deadline.localeCompare(b.deadline);
+                    if (deadlineDiff !== 0) return deadlineDiff;
+                }
+                if (a.deadline) return -1;
+                if (b.deadline) return 1;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        function showStatus(message, type) {
+            statusBanner.className = `status-banner status-${type}`;
+            statusBanner.textContent = message;
+            statusBanner.style.display = 'block';
+            window.clearTimeout(showStatus._timer);
+            showStatus._timer = window.setTimeout(() => {
+                statusBanner.style.display = 'none';
+            }, 3400);
+        }
+
+        function renderSummaryCards() {
+            const totalTarget = goals.reduce((sum, goal) => sum + goal.target, 0);
+            const totalSaved = goals.reduce((sum, goal) => sum + goal.current, 0);
+            const activeGoals = goals.filter(goal => goal.status !== 'completed');
+            const monthlyGoalContrib = activeGoals.reduce((sum, goal) => sum + goal.monthly, 0);
+            const completionRate = totalTarget > 0 ? ((totalSaved / totalTarget) * 100) : 0;
+
+            const remaining = Math.max(0, totalTarget - totalSaved);
+            const projectedMonths = monthlyGoalContrib > 0 ? Math.ceil(remaining / monthlyGoalContrib) : null;
+
+            goalSummaryCards.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-label">Active Goals</div>
+                    <div class="summary-value">${activeGoals.length}</div>
+                    <div class="summary-help">${goals.length} total goals</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Target</div>
+                    <div class="summary-value">${formatMoney(totalTarget)}</div>
+                    <div class="summary-help">Across all goals</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Saved So Far</div>
+                    <div class="summary-value">${formatMoney(totalSaved)}</div>
+                    <div class="summary-help">${completionRate.toFixed(1)}% complete</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Monthly Goal Funding</div>
+                    <div class="summary-value">${formatMoney(monthlyGoalContrib)}</div>
+                    <div class="summary-help">${projectedMonths ? `${projectedMonths} months projected` : 'Set monthly contributions'}</div>
+                </div>
+            `;
+        }
+
+        function renderGoalsList() {
+            const list = sortGoals(getFilteredGoals());
+            if (!list.length) {
+                goalsList.innerHTML = '<div class="empty-state">No goals in this view yet. Add one from the form above.</div>';
+                return;
+            }
+
+            goalsList.innerHTML = list.map(goal => {
+                const progress = goal.target > 0 ? Math.min(100, (goal.current / goal.target) * 100) : 0;
+                const remaining = Math.max(0, goal.target - goal.current);
+                const monthlyProjection = (goal.monthly > 0 && remaining > 0) ? `${Math.ceil(remaining / goal.monthly)} months left` : 'No monthly contribution set';
+
+                const deadlineNote = goal.deadline
+                    ? `Deadline: ${escapeHtml(goal.deadline)}`
+                    : 'No deadline set';
+
+                return `
+                    <div class="goal-card" data-goal-id="${escapeHtml(goal.id)}">
+                        <div class="goal-top">
+                            <div>
+                                <div class="goal-name">${escapeHtml(goal.name)}</div>
+                                <div class="goal-meta">
+                                    <span class="pill type">${escapeHtml(goal.type)}</span>
+                                    <span class="pill priority-${goal.priority.toLowerCase()}">${escapeHtml(goal.priority)}</span>
+                                    ${goal.status === 'completed' ? '<span class="pill completed">Completed</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="goal-stats">
+                            <span>${formatMoney(goal.current)} saved</span>
+                            <span>${formatMoney(goal.target)} target</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width:${progress.toFixed(1)}%;"></div>
+                        </div>
+
+                        <div class="goal-footer">
+                            <div style="font-size:11px; color:#a8a8a8;">
+                                ${formatMoney(remaining)} remaining • ${escapeHtml(monthlyProjection)}
+                            </div>
+                            <div class="goal-actions">
+                                <button class="goal-action add" data-action="monthly" data-id="${escapeHtml(goal.id)}">+ Monthly</button>
+                                <button class="goal-action custom" data-action="custom" data-id="${escapeHtml(goal.id)}">+ Contribution</button>
+                                <button class="goal-action toggle" data-action="toggle" data-id="${escapeHtml(goal.id)}">${goal.status === 'completed' ? 'Reopen' : 'Complete'}</button>
+                                <button class="goal-action delete" data-action="delete" data-id="${escapeHtml(goal.id)}">Delete</button>
+                            </div>
+                        </div>
+
+                        <div class="goal-note">${escapeHtml(deadlineNote)}</div>
+                        ${goal.notes ? `<div class="goal-note">Note: ${escapeHtml(goal.notes)}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMilestones() {
+            const today = new Date();
+            const items = goals
+                .filter(goal => goal.status !== 'completed' && goal.deadline)
+                .sort((a, b) => a.deadline.localeCompare(b.deadline))
+                .slice(0, 6);
+
+            if (!items.length) {
+                milestonesList.innerHTML = '<div class="empty-state">No deadlines yet. Add dates to your goals to build a milestone timeline.</div>';
+                return;
+            }
+
+            milestonesList.innerHTML = items.map(goal => {
+                const deadlineDate = new Date(goal.deadline + 'T00:00:00');
+                const dayDiff = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const progress = goal.target > 0 ? (goal.current / goal.target) * 100 : 0;
+
+                let badgeClass = 'timeline-good';
+                let badgeText = `${dayDiff} days left`;
+
+                if (dayDiff < 0) {
+                    badgeClass = 'timeline-danger';
+                    badgeText = `${Math.abs(dayDiff)} days overdue`;
+                } else if (dayDiff <= 30) {
+                    badgeClass = 'timeline-warn';
+                }
+
+                return `
+                    <div class="timeline-item">
+                        <div>
+                            <div class="timeline-main">${escapeHtml(goal.name)}</div>
+                            <div class="timeline-sub">${escapeHtml(goal.deadline)} • ${progress.toFixed(1)}% funded</div>
+                        </div>
+                        <div class="timeline-badge ${badgeClass}">${badgeText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStrategy() {
+            const snapshot = getFinancialSnapshot(spendingData);
+            const activeGoals = goals.filter(goal => goal.status !== 'completed');
+            const plannedMonthlyGoals = activeGoals.reduce((sum, goal) => sum + goal.monthly, 0);
+            const recommendedGoalBudget = Math.max(0, snapshot.monthlySurplus * 0.6);
+
+            const insights = [];
+
+            insights.push({
+                type: 'good',
+                text: `Monthly income: ${formatMoney(snapshot.monthlyIncome)} • Monthly expenses: ${formatMoney(snapshot.monthlyExpenses)}`
+            });
+
+            if (snapshot.monthlySurplus <= 0) {
+                insights.push({
+                    type: 'bad',
+                    text: `Current monthly cash flow is negative by ${formatMoney(Math.abs(snapshot.monthlySurplus))}. Goals will be hard to fund until expenses are reduced or income increases.`
+                });
+            } else {
+                insights.push({
+                    type: 'good',
+                    text: `Current monthly surplus is ${formatMoney(snapshot.monthlySurplus)}. A balanced goal funding amount is about ${formatMoney(recommendedGoalBudget)}.`
+                });
+            }
+
+            if (plannedMonthlyGoals > snapshot.monthlySurplus && snapshot.monthlySurplus > 0) {
+                insights.push({
+                    type: 'warn',
+                    text: `You planned ${formatMoney(plannedMonthlyGoals)} monthly for goals, which is above your surplus (${formatMoney(snapshot.monthlySurplus)}). Consider reducing contribution amounts.`
+                });
+            } else if (plannedMonthlyGoals > 0) {
+                insights.push({
+                    type: 'good',
+                    text: `Planned goal funding (${formatMoney(plannedMonthlyGoals)} monthly) is within your current surplus.`
+                });
+            } else {
+                insights.push({
+                    type: 'warn',
+                    text: 'No monthly goal contributions set yet. Add monthly amounts to get accurate completion timelines.'
+                });
+            }
+
+            if (snapshot.debtMonthly > 0) {
+                insights.push({
+                    type: 'warn',
+                    text: `Debt payments are ${formatMoney(snapshot.debtMonthly)} monthly. Prioritize high-interest debt goals alongside savings goals.`
+                });
+            }
+
+            if (snapshot.savingsMonthly <= 0) {
+                insights.push({
+                    type: 'warn',
+                    text: 'No automatic emergency/retirement savings detected. Keep at least one safety-oriented goal as High priority.'
+                });
+            }
+
+            strategyInsights.innerHTML = insights.map(item => `<div class="insight ${item.type}">${escapeHtml(item.text)}</div>`).join('');
+        }
+
+        function renderAll() {
+            renderSummaryCards();
+            renderGoalsList();
+            renderMilestones();
+            renderStrategy();
+        }
+
+        async function saveGoals() {
+            if (!currentUser) return;
+            planningDocData = { ...planningDocData, goals };
+            await db
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('planning')
+                .doc('dashboard')
+                .set(planningDocData, { merge: true });
+        }
+
+        async function loadGoalData() {
+            try {
+                const [planningDoc, spendingDoc] = await Promise.all([
+                    db.collection('users').doc(currentUser.uid).collection('planning').doc('dashboard').get(),
+                    db.collection('users').doc(currentUser.uid).collection('spending').doc('categories').get()
+                ]);
+
+                planningDocData = planningDoc.exists ? planningDoc.data() : {};
+                goals = normalizeGoals(planningDocData.goals || []);
+                spendingData = spendingDoc.exists ? spendingDoc.data() : {};
+
+                renderAll();
+            } catch (error) {
+                console.error('Error loading goals data:', error);
+                goalsList.innerHTML = '<div class="empty-state">Could not load goals right now. Try refreshing.</div>';
+                showStatus('Error loading goals data.', 'error');
+            }
+        }
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = user;
+            welcome.textContent = `You're logged in as: ${user.email}`;
+            userEmail.textContent = user.email;
+            await loadGoalData();
+        });
+
+        logoutBtn.onclick = function() {
+            auth.signOut();
+        };
+
+        goalForm.addEventListener('submit', async event => {
+            event.preventDefault();
+
+            const name = document.getElementById('goalName').value.trim();
+            const target = toAmount(document.getElementById('goalTarget').value);
+            const current = toAmount(document.getElementById('goalCurrent').value);
+            const monthly = toAmount(document.getElementById('goalMonthly').value);
+            const deadline = toDateInputValue(document.getElementById('goalDeadline').value);
+            const type = document.getElementById('goalType').value;
+            const priority = document.getElementById('goalPriority').value;
+            const notes = document.getElementById('goalNotes').value.trim();
+
+            if (!name || target <= 0) {
+                showStatus('Goal name and target are required.', 'error');
+                return;
+            }
+
+            const safeCurrent = Math.min(target, Math.max(0, current));
+
+            goals.push({
+                id: createId('goal'),
+                name,
+                target,
+                current: safeCurrent,
+                monthly: Math.max(0, monthly),
+                deadline,
+                type,
+                priority,
+                notes,
+                status: safeCurrent >= target ? 'completed' : 'active',
+                createdAt: new Date().toISOString()
+            });
+
+            try {
+                await saveGoals();
+                goalForm.reset();
+                document.getElementById('goalPriority').value = 'Medium';
+                renderAll();
+                showStatus('Goal added.', 'success');
+            } catch (error) {
+                console.error('Error saving goal:', error);
+                showStatus('Could not save goal. Try again.', 'error');
+            }
+        });
+
+        applyMonthlyBtn.addEventListener('click', async () => {
+            let touched = 0;
+            goals = goals.map(goal => {
+                if (goal.status === 'completed' || goal.monthly <= 0) return goal;
+                const nextCurrent = Math.min(goal.target, goal.current + goal.monthly);
+                if (nextCurrent !== goal.current) touched += 1;
+                return {
+                    ...goal,
+                    current: nextCurrent,
+                    status: nextCurrent >= goal.target ? 'completed' : 'active'
+                };
+            });
+
+            if (!touched) {
+                showStatus('No active goals with monthly contributions to apply.', 'info');
+                return;
+            }
+
+            try {
+                await saveGoals();
+                renderAll();
+                showStatus(`Applied monthly contributions to ${touched} goal(s).`, 'success');
+            } catch (error) {
+                console.error('Error applying monthly contributions:', error);
+                showStatus('Could not apply monthly contributions.', 'error');
+            }
+        });
+
+        goalFilters.addEventListener('click', event => {
+            const button = event.target.closest('button[data-filter]');
+            if (!button) return;
+            currentFilter = button.getAttribute('data-filter');
+            goalFilters.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+            button.classList.add('active');
+            renderGoalsList();
+        });
+
+        goalsList.addEventListener('click', async event => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+
+            const action = button.getAttribute('data-action');
+            const id = button.getAttribute('data-id');
+            const index = goals.findIndex(goal => goal.id === id);
+            if (index === -1) return;
+
+            let touched = false;
+
+            if (action === 'monthly') {
+                const goal = goals[index];
+                if (goal.monthly <= 0) {
+                    showStatus('Set a monthly contribution for this goal first.', 'info');
+                    return;
+                }
+                goal.current = Math.min(goal.target, goal.current + goal.monthly);
+                goal.status = goal.current >= goal.target ? 'completed' : 'active';
+                touched = true;
+            }
+
+            if (action === 'custom') {
+                const raw = window.prompt('Enter contribution amount in dollars:');
+                if (raw === null) return;
+                const amount = toAmount(raw);
+                if (amount <= 0) {
+                    showStatus('Contribution must be greater than $0.', 'error');
+                    return;
+                }
+                const goal = goals[index];
+                goal.current = Math.min(goal.target, goal.current + amount);
+                goal.status = goal.current >= goal.target ? 'completed' : 'active';
+                touched = true;
+            }
+
+            if (action === 'toggle') {
+                const goal = goals[index];
+                if (goal.status === 'completed') {
+                    goal.current = Math.max(0, goal.target - Math.max(goal.monthly, 1));
+                    goal.status = 'active';
+                } else {
+                    goal.current = goal.target;
+                    goal.status = 'completed';
+                }
+                touched = true;
+            }
+
+            if (action === 'delete') {
+                const confirmed = window.confirm('Delete this goal? This cannot be undone.');
+                if (!confirmed) return;
+                goals.splice(index, 1);
+                touched = true;
+            }
+
+            if (!touched) return;
+
+            try {
+                await saveGoals();
+                renderAll();
+                showStatus('Goal updated.', 'success');
+            } catch (error) {
+                console.error('Error updating goal:', error);
+                showStatus('Could not update goal.', 'error');
+            }
+        });
+
+        goalTemplates.addEventListener('click', event => {
+            const button = event.target.closest('button[data-template]');
+            if (!button) return;
+            const template = button.getAttribute('data-template');
+
+            const templates = {
+                emergency: {
+                    name: 'Emergency Fund',
+                    target: 10000,
+                    current: 0,
+                    monthly: 400,
+                    type: 'Emergency',
+                    priority: 'High'
+                },
+                vacation: {
+                    name: 'Vacation',
+                    target: 3000,
+                    current: 0,
+                    monthly: 200,
+                    type: 'Travel',
+                    priority: 'Medium'
+                },
+                car: {
+                    name: 'Vehicle Down Payment',
+                    target: 8000,
+                    current: 0,
+                    monthly: 300,
+                    type: 'Vehicle',
+                    priority: 'Medium'
+                },
+                home: {
+                    name: 'Home Down Payment',
+                    target: 30000,
+                    current: 0,
+                    monthly: 700,
+                    type: 'Home',
+                    priority: 'High'
+                }
+            };
+
+            const selected = templates[template];
+            if (!selected) return;
+
+            document.getElementById('goalName').value = selected.name;
+            document.getElementById('goalTarget').value = selected.target;
+            document.getElementById('goalCurrent').value = selected.current;
+            document.getElementById('goalMonthly').value = selected.monthly;
+            document.getElementById('goalType').value = selected.type;
+            document.getElementById('goalPriority').value = selected.priority;
+            document.getElementById('goalNotes').focus();
+
+            showStatus('Template loaded. Adjust details and click Add Goal.', 'info');
+        });
+    </script>
+</body>
+</html>
