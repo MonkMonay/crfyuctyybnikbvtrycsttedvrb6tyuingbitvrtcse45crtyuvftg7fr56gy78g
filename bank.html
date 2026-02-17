@@ -92,6 +92,73 @@
             padding: 3px 8px;
             margin-bottom: 10px;
         }
+        .hint-text {
+            color: #9db5ff;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .choice-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .choice-chip {
+            background: #2f2f2f;
+            color: #ddd;
+            border: 1px solid #4a4a4a;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice-chip:hover { border-color: #4caf50; color: #fff; }
+        .choice-chip.active { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; color: #9af6a2; }
+        .not-sure-btn {
+            background: #5c6bc0;
+            color: #fff;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .not-sure-btn:hover { background: #3f51b5; }
+        .live-preview {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid #3b3b3b;
+            background: #1a1a1a;
+            text-align: left;
+        }
+        .preview-title { color: #7ddf82; font-size: 14px; margin-bottom: 10px; font-weight: bold; }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        .preview-item {
+            background: #262626;
+            border: 1px solid #363636;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .preview-label { color: #aaa; font-size: 11px; margin-bottom: 5px; }
+        .preview-value { color: #fff; font-size: 18px; font-weight: 700; }
+        .refine-btn {
+            background: #6a1b9a;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .refine-btn:hover { background: #4a148c; }
         @media (max-width: 900px) {
             .setup-grid { grid-template-columns: 1fr; }
             .container { padding: 20px; }
@@ -126,7 +193,7 @@
                 <div class="setup-grid">
                     <button class="setup-option" id="quickSetupBtn" type="button">
                         <h3>Quick Setup</h3>
-                        <p>Essential questions only for a clean first budget with less friction.</p>
+                        <p>8 core questions, adaptive follow-ups, and instant budget preview.</p>
                         <span class="setup-chip">About 5 minutes</span>
                     </button>
                     <button class="setup-option" id="detailedSetupBtn" type="button">
@@ -149,6 +216,7 @@
                 <div class="question-title" id="questionTitle"></div>
                 <div class="question-text" id="questionText"></div>
                 <div class="question-subtext" id="questionSubtext"></div>
+                <div class="hint-text" id="questionHint"></div>
                 <div class="input-group">
                     <input type="number" class="amount-input" id="amountInput" placeholder="$0" min="0" step="0.01">
                 </div>
@@ -161,11 +229,14 @@
                     <button class="quick-btn" data-amount="500">$500</button>
                     <button class="quick-btn" data-amount="1000">$1,000</button>
                 </div>
+                <div id="rangeChoiceRow" class="choice-row" style="display: none;"></div>
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                     <button class="skip-btn back-btn" id="backBtn">Back</button>
                     <button class="skip-btn" id="skipBtn">Skip question</button>
+                    <button class="not-sure-btn" id="notSureBtn" type="button" style="display:none;">I'm not sure</button>
                     <button class="next-btn" id="nextBtn">Next</button>
                 </div>
+                <div id="livePreview" class="live-preview"></div>
             </div>
         </div>
 
@@ -179,6 +250,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
                     <button class="edit-btn" id="editBtn">Edit Spending Categories</button>
+                    <button class="refine-btn" id="refineBtn" type="button">Refine Categories (Optional)</button>
                     <button class="next-btn" id="goDashboardBtn" type="button">Go to Dashboard</button>
                 </div>
             </div>
@@ -293,15 +365,169 @@
         ]}
     ];
 
-    const QUICK_SETUP_FIELDS = new Set([
-        'Primary Income Source',
-        'Primary Monthly Income',
-        'Has Additional Income',
-        'Additional Monthly Income',
-        'Total Monthly Income',
-        'Has Irregular Income',
-        'Annual Irregular Income',
-        'Total Annual Income',
+    const QUICK_QUESTIONS = [
+        {
+            key: 'primary_source',
+            label: 'Primary Income Source',
+            category: 'Income',
+            type: 'select',
+            question: 'Where does most of your income come from?',
+            hint: 'Choose the closest match. You can refine it later.',
+            options: ['Salary/Wages', 'Hourly Pay', 'Commission', 'Business Income', 'Self-Employment', 'Social Security', 'Pension', 'Other'],
+            defaultValue: 'Salary/Wages'
+        },
+        {
+            key: 'primary_income',
+            label: 'Primary Monthly Income',
+            category: 'Income',
+            type: 'range_number',
+            question: 'About how much is your monthly take-home pay?',
+            hint: 'A rough range is perfect.',
+            ranges: [
+                { label: '$1k-$2k', value: 1500 },
+                { label: '$2k-$3k', value: 2500 },
+                { label: '$3k-$4k', value: 3500 },
+                { label: '$4k-$6k', value: 5000 },
+                { label: '$6k-$8k', value: 7000 },
+                { label: '$8k+', value: 9000 }
+            ],
+            presets: { Conservative: 3200, Typical: 5000, Aggressive: 7500 },
+            notSure: 4500
+        },
+        {
+            key: 'additional_income',
+            label: 'Additional Monthly Income',
+            category: 'Income',
+            type: 'range_number',
+            allowZero: true,
+            question: 'Any additional monthly income from side work or other sources?',
+            hint: 'If none, choose $0 and continue.',
+            ranges: [
+                { label: '$0', value: 0 },
+                { label: '$100-$300', value: 200 },
+                { label: '$300-$700', value: 500 },
+                { label: '$700-$1.2k', value: 900 },
+                { label: '$1.2k+', value: 1500 }
+            ],
+            presets: { Typical: 500, Aggressive: 1200 },
+            notSure: 300
+        },
+        {
+            key: 'housing_total',
+            label: 'Housing Total',
+            category: 'Housing',
+            type: 'range_number',
+            question: 'What is your monthly housing total?',
+            hint: 'Rent or mortgage plus core home costs.',
+            ranges: [
+                { label: '$600-$1k', value: 800 },
+                { label: '$1k-$1.5k', value: 1250 },
+                { label: '$1.5k-$2.2k', value: 1850 },
+                { label: '$2.2k-$3k', value: 2600 },
+                { label: '$3k+', value: 3400 }
+            ],
+            presets: { Conservative: 1300, Typical: 1800, Aggressive: 2600 },
+            notSure: 1700
+        },
+        {
+            key: 'utilities_total',
+            label: 'Utilities & Phone',
+            category: 'Housing',
+            type: 'range_number',
+            question: 'What do utilities, internet, and phone cost monthly?',
+            hint: 'Electricity, water, gas, internet, and phone.',
+            ranges: [
+                { label: '$80-$150', value: 120 },
+                { label: '$150-$250', value: 200 },
+                { label: '$250-$400', value: 320 },
+                { label: '$400+', value: 480 }
+            ],
+            presets: { Conservative: 180, Typical: 280, Aggressive: 420 },
+            notSure: 260
+        },
+        {
+            key: 'transport_total',
+            label: 'Transportation Total',
+            category: 'Transportation',
+            type: 'range_number',
+            question: 'What is your monthly transportation total?',
+            hint: 'Car costs, gas, transit, parking, and ride-share.',
+            ranges: [
+                { label: '$80-$200', value: 140 },
+                { label: '$200-$400', value: 300 },
+                { label: '$400-$700', value: 550 },
+                { label: '$700+', value: 850 }
+            ],
+            presets: { Conservative: 220, Typical: 420, Aggressive: 700 },
+            notSure: 360
+        },
+        {
+            key: 'food_total',
+            label: 'Food Total',
+            category: 'Food & Dining',
+            type: 'range_number',
+            question: 'What is your monthly food total?',
+            hint: 'Groceries, restaurants, and delivery.',
+            ranges: [
+                { label: '$200-$400', value: 300 },
+                { label: '$400-$700', value: 550 },
+                { label: '$700-$1k', value: 850 },
+                { label: '$1k+', value: 1200 }
+            ],
+            presets: { Conservative: 420, Typical: 700, Aggressive: 980 },
+            notSure: 620
+        },
+        {
+            key: 'financial_focus',
+            label: 'Current Financial Focus',
+            category: 'Financial Obligations',
+            type: 'select',
+            question: 'Which best matches your current financial focus?',
+            hint: 'This decides whether we ask debt and/or savings follow-ups.',
+            options: ['Building savings', 'Paying debt', 'Both equally', 'Neither right now'],
+            defaultValue: 'Building savings'
+        },
+        {
+            key: 'debt_total',
+            label: 'Debt Payments Total',
+            category: 'Financial Obligations',
+            type: 'range_number',
+            allowZero: true,
+            question: 'What is your total monthly debt payment?',
+            hint: 'Credit cards, student loans, personal loans, medical debt.',
+            dependsOn: { key: 'financial_focus', values: ['Paying debt', 'Both equally'] },
+            ranges: [
+                { label: '$0', value: 0 },
+                { label: '$50-$200', value: 120 },
+                { label: '$200-$500', value: 340 },
+                { label: '$500-$900', value: 680 },
+                { label: '$900+', value: 1200 }
+            ],
+            presets: { Typical: 480, Aggressive: 900 },
+            notSure: 350
+        },
+        {
+            key: 'savings_total',
+            label: 'Savings Total',
+            category: 'Financial Obligations',
+            type: 'range_number',
+            allowZero: true,
+            question: 'How much do you plan to save each month?',
+            hint: 'Emergency fund, retirement, and investing combined.',
+            dependsOn: { key: 'financial_focus', values: ['Building savings', 'Both equally'] },
+            ranges: [
+                { label: '$0', value: 0 },
+                { label: '$50-$150', value: 90 },
+                { label: '$150-$350', value: 240 },
+                { label: '$350-$700', value: 520 },
+                { label: '$700+', value: 900 }
+            ],
+            presets: { Typical: 320, Aggressive: 620 },
+            notSure: 220
+        }
+    ];
+
+    const QUICK_REPRESENTATIVE_FIELDS = new Set([
         'Rent/Mortgage',
         'Utilities (Electricity, Water, Gas)',
         'Internet & Phone',
@@ -313,8 +539,11 @@
         'Restaurants',
         'Food Delivery',
         'Health Insurance',
+        'Doctor Visits',
+        'Prescriptions',
         'Streaming Services',
         'Hobbies',
+        'Movies/Theater',
         'Credit Cards',
         'Student Loans',
         'Personal Loans',
@@ -329,6 +558,7 @@
     let currentUser = null;
     let questionnaireMode = 'quick';
     let questionFlow = [];
+    let quickAnswers = {};
 
     // DOM elements
     const userEmail = document.getElementById('userEmail');
@@ -344,12 +574,17 @@
     const questionTitle = document.getElementById('questionTitle');
     const questionText = document.getElementById('questionText');
     const questionSubtext = document.getElementById('questionSubtext');
+    const questionHint = document.getElementById('questionHint');
     const skipBtn = document.getElementById('skipBtn');
     const backBtn = document.getElementById('backBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const notSureBtn = document.getElementById('notSureBtn');
+    const rangeChoiceRow = document.getElementById('rangeChoiceRow');
+    const livePreview = document.getElementById('livePreview');
     const summaryContent = document.getElementById('summaryContent');
     const totalAmount = document.getElementById('totalAmount');
     const editBtn = document.getElementById('editBtn');
+    const refineBtn = document.getElementById('refineBtn');
     const goDashboardBtn = document.getElementById('goDashboardBtn');
 
     auth.onAuthStateChanged(function(user) {
@@ -365,11 +600,18 @@
     async function loadUserData() {
         try {
             const doc = await db.collection('users').doc(currentUser.uid).collection('spending').doc('categories').get();
-            if (doc.exists) {
-                userResponses = doc.data() || {};
+            if (!doc.exists) {
+                userResponses = {};
+                showSetupChoiceView();
+                return;
+            }
+
+            userResponses = doc.data() || {};
+            const answeredCount = Object.values(userResponses).filter(value => value !== undefined && value !== null && value !== '' && value !== 'skipped').length;
+            const onboardingComplete = userResponses.__onboardingComplete === true || answeredCount > 20;
+            if (onboardingComplete) {
                 showSummaryView();
             } else {
-                userResponses = {};
                 showSetupChoiceView();
             }
         } catch (error) {
@@ -386,6 +628,34 @@
         } catch (error) {
             console.error('Error saving data:', error);
         }
+    }
+
+    function toNumber(value) {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function formatMoney(value) {
+        return `$${Math.round(toNumber(value)).toLocaleString()}`;
+    }
+
+    function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    }
+
+    function hasQuickAnswerValue(key) {
+        const value = quickAnswers[key];
+        return value !== undefined && value !== null && value !== '';
+    }
+
+    function estimateHealthTotal(monthlyIncome) {
+        if (monthlyIncome <= 0) return 0;
+        return clamp(Math.round(monthlyIncome * 0.06), 90, 900);
+    }
+
+    function estimateLifestyleTotal(monthlyIncome) {
+        if (monthlyIncome <= 0) return 0;
+        return clamp(Math.round(monthlyIncome * 0.08), 120, 1200);
     }
 
     function showSetupChoiceView() {
@@ -408,32 +678,49 @@
         displaySummary();
     }
 
-    function startQuestionnaire(mode) {
-        questionnaireMode = mode;
-        questionFlow = buildQuestionFlow(mode);
-        currentQuestionIndex = 0;
-        showQuestionnaireView();
+    function initializeQuickAnswersFromUserResponses() {
+        const debtTotal = toNumber(userResponses['Credit Cards']) + toNumber(userResponses['Student Loans']) + toNumber(userResponses['Personal Loans']) + toNumber(userResponses['Medical Debt']);
+        const savingsTotal = toNumber(userResponses['Emergency Fund']) + toNumber(userResponses['Retirement Savings']) + toNumber(userResponses['Investment Accounts']);
+        let inferredFocus = 'Neither right now';
+        if (debtTotal > 0 && savingsTotal > 0) inferredFocus = 'Both equally';
+        else if (debtTotal > 0) inferredFocus = 'Paying debt';
+        else if (savingsTotal > 0) inferredFocus = 'Building savings';
+
+        quickAnswers = {
+            primary_source: userResponses['Primary Income Source'] || 'Salary/Wages',
+            primary_income: toNumber(userResponses['Primary Monthly Income']),
+            additional_income: toNumber(userResponses['Additional Monthly Income']),
+            housing_total: toNumber(userResponses['Rent/Mortgage']),
+            utilities_total: toNumber(userResponses['Utilities (Electricity, Water, Gas)']) + toNumber(userResponses['Internet & Phone']),
+            transport_total: toNumber(userResponses['Car Payment/Lease']) + toNumber(userResponses['Gas/Fuel']) + toNumber(userResponses['Car Insurance']) + toNumber(userResponses['Public Transportation']),
+            food_total: toNumber(userResponses['Groceries']) + toNumber(userResponses['Restaurants']) + toNumber(userResponses['Food Delivery']),
+            health_total: toNumber(userResponses['Health Insurance']) + toNumber(userResponses['Doctor Visits']) + toNumber(userResponses['Prescriptions']),
+            lifestyle_total: toNumber(userResponses['Streaming Services']) + toNumber(userResponses['Hobbies']) + toNumber(userResponses['Movies/Theater']),
+            financial_focus: userResponses.__quickFinancialFocus || inferredFocus,
+            debt_total: debtTotal,
+            savings_total: savingsTotal
+        };
     }
 
     function buildQuestionFlow(mode) {
+        if (mode === 'quick') {
+            return QUICK_QUESTIONS.map(item => ({
+                flow: 'quick',
+                category: { title: item.category || 'Quick Start' },
+                item
+            }));
+        }
+
         const flow = [];
         for (const category of spendingCategories) {
             for (const item of category.items) {
-                const includeInMode = mode === 'detailed' || QUICK_SETUP_FIELDS.has(item.label) || item.type === 'calculated';
-                if (includeInMode) {
-                    flow.push({ category, item });
-                }
+                flow.push({ flow: 'detailed', category, item });
             }
         }
         return flow;
     }
 
-    function toNumber(value) {
-        const parsed = parseFloat(value);
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
-
-    function shouldSkipQuestion(category, item) {
+    function shouldSkipDetailedQuestion(category, item) {
         if (item.label === 'Additional Income Sources' || item.label === 'Additional Monthly Income') {
             return userResponses['Has Additional Income'] === 'no';
         }
@@ -443,11 +730,11 @@
         }
 
         if (item.label === 'Mortgage Interest Rate' || item.label === 'Mortgage Principal') {
-            const rentMortgage = toNumber(userResponses['Rent/Mortgage']);
-            return rentMortgage <= 0;
+            return toNumber(userResponses['Rent/Mortgage']) <= 0;
         }
 
-        if (category.title === 'Transportation' && (item.label === 'Gas/Fuel' || item.label === 'Car Insurance' || item.label === 'Maintenance/Repairs')) {
+        if (category.title === 'Transportation' &&
+            (item.label === 'Gas/Fuel' || item.label === 'Car Insurance' || item.label === 'Maintenance/Repairs')) {
             const carPayment = toNumber(userResponses['Car Payment/Lease']);
             return carPayment <= 0 && userResponses['Car Payment/Lease'] !== undefined && userResponses['Car Payment/Lease'] !== 'skipped';
         }
@@ -455,52 +742,318 @@
         return false;
     }
 
+    function shouldSkipQuickQuestion(item) {
+        if (!item.dependsOn) return false;
+        if (typeof item.dependsOn === 'function') {
+            return !item.dependsOn(quickAnswers);
+        }
+        const currentValue = quickAnswers[item.dependsOn.key];
+        if (Object.prototype.hasOwnProperty.call(item.dependsOn, 'value')) {
+            return currentValue !== item.dependsOn.value;
+        }
+        if (Array.isArray(item.dependsOn.values)) {
+            return !item.dependsOn.values.includes(currentValue);
+        }
+        return false;
+    }
+
+    function shouldSkipEntry(entry) {
+        if (entry.flow === 'quick') return shouldSkipQuickQuestion(entry.item);
+        return shouldSkipDetailedQuestion(entry.category, entry.item);
+    }
+
+    function getVisibleIndexes() {
+        const indexes = [];
+        for (let i = 0; i < questionFlow.length; i += 1) {
+            if (!shouldSkipEntry(questionFlow[i])) {
+                indexes.push(i);
+            }
+        }
+        return indexes;
+    }
+
     function getCurrentQuestionEntry() {
         while (currentQuestionIndex < questionFlow.length) {
             const entry = questionFlow[currentQuestionIndex];
-            if (!shouldSkipQuestion(entry.category, entry.item)) {
-                return entry;
-            }
-            if (userResponses[entry.item.label] === undefined) {
-                userResponses[entry.item.label] = 'skipped';
-            }
+            if (!shouldSkipEntry(entry)) return entry;
             currentQuestionIndex += 1;
         }
         return null;
     }
 
-    function getProgressInfo() {
-        let visibleTotal = 0;
-        let currentVisibleIndex = 0;
-        for (let i = 0; i < questionFlow.length; i += 1) {
-            const entry = questionFlow[i];
-            if (!shouldSkipQuestion(entry.category, entry.item)) {
-                visibleTotal += 1;
-                if (i <= currentQuestionIndex) {
-                    currentVisibleIndex = visibleTotal;
+    function applyQuickAnswersToUserResponses() {
+        const primaryIncome = toNumber(quickAnswers.primary_income);
+        const additionalIncome = Math.max(0, toNumber(quickAnswers.additional_income));
+        const focus = quickAnswers.financial_focus || 'Building savings';
+        const includeDebt = focus === 'Paying debt' || focus === 'Both equally';
+        const includeSavings = focus === 'Building savings' || focus === 'Both equally';
+        const debtTotal = includeDebt ? Math.max(0, toNumber(quickAnswers.debt_total)) : 0;
+        const savingsTotal = includeSavings ? Math.max(0, toNumber(quickAnswers.savings_total)) : 0;
+        const totalMonthlyIncome = primaryIncome + additionalIncome;
+
+        let health = toNumber(quickAnswers.health_total);
+        if (health <= 0) health = estimateHealthTotal(totalMonthlyIncome);
+        quickAnswers.health_total = health;
+
+        let lifestyle = toNumber(quickAnswers.lifestyle_total);
+        if (lifestyle <= 0) lifestyle = estimateLifestyleTotal(totalMonthlyIncome);
+        quickAnswers.lifestyle_total = lifestyle;
+
+        userResponses['Primary Income Source'] = quickAnswers.primary_source || 'Salary/Wages';
+        userResponses['Primary Monthly Income'] = primaryIncome.toFixed(2);
+        userResponses['Has Additional Income'] = additionalIncome > 0 ? 'yes' : 'no';
+        userResponses['Additional Monthly Income'] = additionalIncome.toFixed(2);
+        userResponses['Additional Income Sources'] = additionalIncome > 0 ? ['Other'] : 'skipped';
+        userResponses['Has Irregular Income'] = 'no';
+        userResponses['Annual Irregular Income'] = '0';
+        userResponses['Irregular Income Types'] = 'skipped';
+
+        userResponses['Total Monthly Income'] = totalMonthlyIncome.toFixed(2);
+        userResponses['Total Annual Income'] = (totalMonthlyIncome * 12).toFixed(2);
+
+        for (const category of spendingCategories) {
+            if (category.title === 'Income') continue;
+            for (const item of category.items) {
+                if (item.label === 'Mortgage Interest Rate') {
+                    userResponses[item.label] = '0';
+                    continue;
                 }
+                if (QUICK_REPRESENTATIVE_FIELDS.has(item.label)) continue;
+                userResponses[item.label] = '0';
             }
         }
-        return {
-            current: Math.max(1, currentVisibleIndex),
-            total: Math.max(1, visibleTotal)
-        };
+
+        const housing = toNumber(quickAnswers.housing_total);
+        const utilities = toNumber(quickAnswers.utilities_total);
+        const transport = toNumber(quickAnswers.transport_total);
+        const food = toNumber(quickAnswers.food_total);
+
+        userResponses['Rent/Mortgage'] = housing.toFixed(2);
+        userResponses['Utilities (Electricity, Water, Gas)'] = (utilities * 0.7).toFixed(2);
+        userResponses['Internet & Phone'] = (utilities * 0.3).toFixed(2);
+
+        userResponses['Car Payment/Lease'] = (transport * 0.4).toFixed(2);
+        userResponses['Gas/Fuel'] = (transport * 0.25).toFixed(2);
+        userResponses['Car Insurance'] = (transport * 0.2).toFixed(2);
+        userResponses['Public Transportation'] = (transport * 0.15).toFixed(2);
+
+        userResponses['Groceries'] = (food * 0.6).toFixed(2);
+        userResponses['Restaurants'] = (food * 0.25).toFixed(2);
+        userResponses['Food Delivery'] = (food * 0.15).toFixed(2);
+
+        userResponses['Health Insurance'] = (health * 0.7).toFixed(2);
+        userResponses['Doctor Visits'] = (health * 0.15).toFixed(2);
+        userResponses['Prescriptions'] = (health * 0.15).toFixed(2);
+
+        userResponses['Streaming Services'] = (lifestyle * 0.3).toFixed(2);
+        userResponses['Hobbies'] = (lifestyle * 0.4).toFixed(2);
+        userResponses['Movies/Theater'] = (lifestyle * 0.3).toFixed(2);
+
+        userResponses['Credit Cards'] = (debtTotal * 0.45).toFixed(2);
+        userResponses['Student Loans'] = (debtTotal * 0.3).toFixed(2);
+        userResponses['Personal Loans'] = (debtTotal * 0.2).toFixed(2);
+        userResponses['Medical Debt'] = (debtTotal * 0.05).toFixed(2);
+
+        userResponses['Emergency Fund'] = (savingsTotal * 0.45).toFixed(2);
+        userResponses['Retirement Savings'] = (savingsTotal * 0.35).toFixed(2);
+        userResponses['Investment Accounts'] = (savingsTotal * 0.2).toFixed(2);
+        userResponses['College Savings'] = '0';
+
+        userResponses.__quickFinancialFocus = focus;
+        userResponses.__onboardingMode = questionnaireMode;
+        userResponses.__onboardingComplete = false;
     }
 
-    function hasNextVisibleQuestion() {
-        for (let i = currentQuestionIndex + 1; i < questionFlow.length; i += 1) {
-            const entry = questionFlow[i];
-            if (!shouldSkipQuestion(entry.category, entry.item)) {
-                return true;
+    function getPreviewTotals() {
+        if (questionnaireMode === 'quick') {
+            const primaryIncome = toNumber(quickAnswers.primary_income);
+            const additionalIncome = Math.max(0, toNumber(quickAnswers.additional_income));
+            const income = primaryIncome + additionalIncome;
+            const focus = quickAnswers.financial_focus || 'Building savings';
+            const includeDebt = focus === 'Paying debt' || focus === 'Both equally';
+            const includeSavings = focus === 'Building savings' || focus === 'Both equally';
+            const health = toNumber(quickAnswers.health_total) > 0 ? toNumber(quickAnswers.health_total) : estimateHealthTotal(income);
+            const lifestyle = toNumber(quickAnswers.lifestyle_total) > 0 ? toNumber(quickAnswers.lifestyle_total) : estimateLifestyleTotal(income);
+            const spending = toNumber(quickAnswers.housing_total)
+                + toNumber(quickAnswers.utilities_total)
+                + toNumber(quickAnswers.transport_total)
+                + toNumber(quickAnswers.food_total)
+                + health
+                + lifestyle
+                + (includeDebt ? toNumber(quickAnswers.debt_total) : 0);
+            const savings = includeSavings ? toNumber(quickAnswers.savings_total) : 0;
+            const leftover = income - spending - savings;
+            return { income, spending, savings, leftover };
+        }
+
+        const income = toNumber(userResponses['Total Monthly Income']) + (toNumber(userResponses['Annual Irregular Income']) / 12);
+        let spending = 0;
+        for (const category of spendingCategories) {
+            if (category.title === 'Income') continue;
+            for (const item of category.items) {
+                if (item.label === 'Mortgage Interest Rate') continue;
+                spending += toNumber(userResponses[item.label]);
             }
         }
-        return false;
+        const savings = toNumber(userResponses['Emergency Fund']) + toNumber(userResponses['Retirement Savings']) + toNumber(userResponses['Investment Accounts']) + toNumber(userResponses['College Savings']);
+        return { income, spending, savings, leftover: income - spending };
     }
 
-    function renderCurrentInput(item) {
+    function renderLivePreview() {
+        const totals = getPreviewTotals();
+        const leftoverColor = totals.leftover >= 0 ? '#4caf50' : '#ff5252';
+        livePreview.innerHTML = `
+            <div class="preview-title">Live Budget Preview</div>
+            <div class="preview-grid">
+                <div class="preview-item">
+                    <div class="preview-label">Monthly Income</div>
+                    <div class="preview-value">${formatMoney(totals.income)}</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Monthly Spending</div>
+                    <div class="preview-value">${formatMoney(totals.spending)}</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Monthly Savings</div>
+                    <div class="preview-value">${formatMoney(totals.savings)}</div>
+                </div>
+                <div class="preview-item">
+                    <div class="preview-label">Estimated Leftover</div>
+                    <div class="preview-value" style="color:${leftoverColor};">${formatMoney(totals.leftover)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCurrentInput(entry) {
+        const item = entry.item;
         const inputGroup = document.querySelector('.input-group');
-        inputGroup.innerHTML = '';
         const quickEntryButtons = document.getElementById('quickEntryButtons');
+        inputGroup.innerHTML = '';
+        quickEntryButtons.innerHTML = '';
+        quickEntryButtons.style.display = 'none';
+        rangeChoiceRow.innerHTML = '';
+        rangeChoiceRow.style.display = 'none';
+        notSureBtn.style.display = 'none';
+
+        if (entry.flow === 'quick') {
+            if (item.type === 'select') {
+                const select = document.createElement('select');
+                select.className = 'amount-input';
+                select.id = 'amountInput';
+
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select an option...';
+                select.appendChild(defaultOption);
+                item.options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    select.appendChild(optionElement);
+                });
+                select.value = quickAnswers[item.key] || '';
+                select.addEventListener('change', () => {
+                    quickAnswers[item.key] = select.value;
+                    applyQuickAnswersToUserResponses();
+                    renderLivePreview();
+                });
+                inputGroup.appendChild(select);
+            } else if (item.type === 'yesno') {
+                const buttonGroup = document.createElement('div');
+                buttonGroup.style.display = 'flex';
+                buttonGroup.style.gap = '10px';
+                buttonGroup.style.justifyContent = 'center';
+
+                const currentValue = quickAnswers[item.key];
+                const yesBtn = document.createElement('button');
+                yesBtn.type = 'button';
+                yesBtn.className = `next-btn ${currentValue === 'yes' ? 'quick-btn active' : ''}`;
+                yesBtn.textContent = 'Yes';
+                yesBtn.onclick = async () => {
+                    quickAnswers[item.key] = 'yes';
+                    applyQuickAnswersToUserResponses();
+                    await saveUserData();
+                    handleNext();
+                };
+
+                const noBtn = document.createElement('button');
+                noBtn.type = 'button';
+                noBtn.className = `next-btn ${currentValue === 'no' ? 'quick-btn active' : ''}`;
+                noBtn.textContent = 'No';
+                noBtn.onclick = async () => {
+                    quickAnswers[item.key] = 'no';
+                    applyQuickAnswersToUserResponses();
+                    await saveUserData();
+                    handleNext();
+                };
+                buttonGroup.appendChild(yesBtn);
+                buttonGroup.appendChild(noBtn);
+                inputGroup.appendChild(buttonGroup);
+            } else if (item.type === 'range_number') {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'amount-input';
+                input.id = 'amountInput';
+                input.placeholder = '$0';
+                input.min = '0';
+                input.step = '1';
+                if (hasQuickAnswerValue(item.key)) {
+                    input.value = toNumber(quickAnswers[item.key]);
+                }
+                input.addEventListener('input', () => {
+                    quickAnswers[item.key] = input.value.trim() === '' ? '' : toNumber(input.value);
+                    applyQuickAnswersToUserResponses();
+                    renderLivePreview();
+                });
+                inputGroup.appendChild(input);
+
+                if (Array.isArray(item.ranges) && item.ranges.length) {
+                    const hasCurrentValue = hasQuickAnswerValue(item.key);
+                    const currentNumericValue = hasCurrentValue ? toNumber(quickAnswers[item.key]) : null;
+                    rangeChoiceRow.style.display = 'flex';
+                    item.ranges.forEach(range => {
+                        const chip = document.createElement('button');
+                        chip.type = 'button';
+                        chip.className = `choice-chip ${hasCurrentValue && currentNumericValue === toNumber(range.value) ? 'active' : ''}`;
+                        chip.textContent = range.label;
+                        chip.onclick = () => {
+                            input.value = range.value;
+                            quickAnswers[item.key] = range.value;
+                            applyQuickAnswersToUserResponses();
+                            renderLivePreview();
+                            rangeChoiceRow.querySelectorAll('.choice-chip').forEach(el => el.classList.remove('active'));
+                            chip.classList.add('active');
+                        };
+                        rangeChoiceRow.appendChild(chip);
+                    });
+                }
+
+                if (item.presets) {
+                    quickEntryButtons.style.display = 'flex';
+                    Object.entries(item.presets).forEach(([label, amount]) => {
+                        const presetBtn = document.createElement('button');
+                        presetBtn.type = 'button';
+                        presetBtn.className = 'quick-btn';
+                        presetBtn.textContent = `${label} (${formatMoney(amount)})`;
+                        presetBtn.onclick = () => {
+                            input.value = amount;
+                            quickAnswers[item.key] = amount;
+                            applyQuickAnswersToUserResponses();
+                            renderLivePreview();
+                            quickEntryButtons.querySelectorAll('.quick-btn').forEach(el => el.classList.remove('active'));
+                            presetBtn.classList.add('active');
+                        };
+                        quickEntryButtons.appendChild(presetBtn);
+                    });
+                }
+                notSureBtn.style.display = 'inline-block';
+            }
+
+            const input = document.getElementById('amountInput');
+            if (input) input.focus();
+            return;
+        }
 
         if (item.type === 'select') {
             const select = document.createElement('select');
@@ -520,7 +1073,6 @@
             });
             select.value = userResponses[item.label] || '';
             inputGroup.appendChild(select);
-            quickEntryButtons.style.display = 'none';
         } else if (item.type === 'yesno') {
             const buttonGroup = document.createElement('div');
             buttonGroup.style.display = 'flex';
@@ -532,8 +1084,9 @@
             yesBtn.type = 'button';
             yesBtn.className = `next-btn ${currentValue === 'yes' ? 'quick-btn active' : ''}`;
             yesBtn.textContent = 'Yes';
-            yesBtn.onclick = () => {
+            yesBtn.onclick = async () => {
                 userResponses[item.label] = 'yes';
+                await saveUserData();
                 handleNext();
             };
 
@@ -541,15 +1094,15 @@
             noBtn.type = 'button';
             noBtn.className = `next-btn ${currentValue === 'no' ? 'quick-btn active' : ''}`;
             noBtn.textContent = 'No';
-            noBtn.onclick = () => {
+            noBtn.onclick = async () => {
                 userResponses[item.label] = 'no';
+                await saveUserData();
                 handleNext();
             };
 
             buttonGroup.appendChild(yesBtn);
             buttonGroup.appendChild(noBtn);
             inputGroup.appendChild(buttonGroup);
-            quickEntryButtons.style.display = 'none';
         } else if (item.type === 'multiselect') {
             const selectedValues = Array.isArray(userResponses[item.label]) ? userResponses[item.label] : [];
             const checkboxGroup = document.createElement('div');
@@ -563,7 +1116,6 @@
             item.options.forEach(option => {
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.style.marginBottom = '10px';
-
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = `${item.label}-${option}`;
@@ -580,9 +1132,7 @@
                 checkboxDiv.appendChild(label);
                 checkboxGroup.appendChild(checkboxDiv);
             });
-
             inputGroup.appendChild(checkboxGroup);
-            quickEntryButtons.style.display = 'none';
         } else if (item.type === 'calculated') {
             const displayDiv = document.createElement('div');
             displayDiv.className = 'amount-input';
@@ -591,19 +1141,14 @@
 
             let calculatedValue = 0;
             if (item.label === 'Total Monthly Income') {
-                const primary = toNumber(userResponses['Primary Monthly Income']);
-                const additional = toNumber(userResponses['Additional Monthly Income']);
-                calculatedValue = primary + additional;
+                calculatedValue = toNumber(userResponses['Primary Monthly Income']) + toNumber(userResponses['Additional Monthly Income']);
             } else if (item.label === 'Total Annual Income') {
-                const monthly = toNumber(userResponses['Total Monthly Income']);
-                const irregular = toNumber(userResponses['Annual Irregular Income']);
-                calculatedValue = (monthly * 12) + irregular;
+                calculatedValue = (toNumber(userResponses['Total Monthly Income']) * 12) + toNumber(userResponses['Annual Irregular Income']);
             }
 
             userResponses[item.label] = calculatedValue.toFixed(2);
-            displayDiv.textContent = `$${calculatedValue.toFixed(2)}`;
+            displayDiv.textContent = formatMoney(calculatedValue);
             inputGroup.appendChild(displayDiv);
-            quickEntryButtons.style.display = 'none';
         } else {
             const input = document.createElement('input');
             input.type = 'number';
@@ -613,18 +1158,25 @@
             input.min = '0';
             input.step = '0.01';
             input.value = userResponses[item.label] && userResponses[item.label] !== 'skipped' ? userResponses[item.label] : '';
+            input.addEventListener('input', () => {
+                userResponses[item.label] = input.value.trim();
+                renderLivePreview();
+            });
             inputGroup.appendChild(input);
-
             quickEntryButtons.style.display = 'flex';
-            const quickBtns = quickEntryButtons.querySelectorAll('.quick-btn');
-            quickBtns.forEach(btn => {
-                btn.classList.remove('active');
+            [0, 50, 100, 200, 500, 1000].forEach(amount => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quick-btn';
+                btn.textContent = formatMoney(amount);
                 btn.onclick = () => {
-                    const amount = btn.getAttribute('data-amount');
                     input.value = amount;
-                    quickBtns.forEach(button => button.classList.remove('active'));
+                    userResponses[item.label] = String(amount);
+                    renderLivePreview();
+                    quickEntryButtons.querySelectorAll('.quick-btn').forEach(el => el.classList.remove('active'));
                     btn.classList.add('active');
                 };
+                quickEntryButtons.appendChild(btn);
             });
         }
 
@@ -632,28 +1184,77 @@
         if (input) input.focus();
     }
 
+    function getProgressInfo() {
+        const visibleIndexes = getVisibleIndexes();
+        const visibleCurrent = Math.max(1, visibleIndexes.findIndex(index => index === currentQuestionIndex) + 1);
+        const total = Math.max(1, visibleIndexes.length);
+        return { current: visibleCurrent, total };
+    }
+
+    function hasNextVisibleQuestion() {
+        const visibleIndexes = getVisibleIndexes();
+        return visibleIndexes.some(index => index > currentQuestionIndex);
+    }
+
     function showCurrentQuestion() {
         const entry = getCurrentQuestionEntry();
         if (!entry) {
-            showSummaryView();
+            if (questionnaireMode === 'quick') {
+                applyQuickAnswersToUserResponses();
+            }
+            userResponses.__onboardingComplete = true;
+            userResponses.__onboardingMode = questionnaireMode;
             saveUserData();
+            showSummaryView();
             return;
         }
 
-        const { category, item } = entry;
         const progressInfo = getProgressInfo();
         const progress = (progressInfo.current / progressInfo.total) * 100;
+        const remainingQuestions = Math.max(0, progressInfo.total - progressInfo.current);
+        const etaMinutes = Math.max(1, Math.ceil((remainingQuestions * 0.4)));
 
         progressFill.style.width = `${progress}%`;
-        progressText.textContent = `Question ${progressInfo.current} of ${progressInfo.total}`;
-        modeBadge.textContent = questionnaireMode === 'quick' ? 'Quick Setup Mode' : 'Detailed Setup Mode';
-        questionTitle.textContent = category.title;
-        questionText.textContent = item.question || `Enter your monthly amount for ${item.label}.`;
-        questionSubtext.textContent = `Field: ${item.label}`;
+        progressText.textContent = `${questionnaireMode === 'quick' ? 'Step' : 'Question'} ${progressInfo.current} of ${progressInfo.total} • about ${etaMinutes} min left`;
+        modeBadge.textContent = questionnaireMode === 'quick' ? 'Quick Start Mode' : 'Detailed Setup Mode';
+        questionTitle.textContent = entry.category.title;
+        questionText.textContent = entry.item.question || `Enter your monthly amount for ${entry.item.label}.`;
+        questionSubtext.textContent = questionnaireMode === 'quick' ? `Quick estimate: ${entry.item.label}` : `Field: ${entry.item.label}`;
+        questionHint.textContent = entry.item.hint || '';
         backBtn.disabled = currentQuestionIndex === 0;
         nextBtn.textContent = hasNextVisibleQuestion() ? 'Next' : 'Finish';
 
-        renderCurrentInput(item);
+        renderCurrentInput(entry);
+        renderLivePreview();
+    }
+
+    function applySmartDefaultForEntry(entry) {
+        if (!entry) return;
+        const item = entry.item;
+
+        if (entry.flow === 'quick') {
+            if (item.type === 'select') {
+                quickAnswers[item.key] = item.defaultValue || item.options[0];
+            } else if (item.type === 'yesno') {
+                quickAnswers[item.key] = 'no';
+            } else if (item.type === 'range_number') {
+                quickAnswers[item.key] = item.allowZero ? 0 : toNumber(item.notSure || 0);
+            }
+            applyQuickAnswersToUserResponses();
+            return;
+        }
+
+        if (item.type === 'yesno') {
+            userResponses[item.label] = 'no';
+        } else if (item.type === 'select') {
+            userResponses[item.label] = item.options && item.options.length ? item.options[0] : 'skipped';
+        } else if (item.type === 'multiselect') {
+            userResponses[item.label] = [];
+        } else if (item.type === 'calculated') {
+            return;
+        } else {
+            userResponses[item.label] = '0';
+        }
     }
 
     function saveCurrentQuestionValue() {
@@ -661,67 +1262,96 @@
         if (!entry) return;
         const item = entry.item;
 
+        if (entry.flow === 'quick') {
+            if (item.type === 'select') {
+                const select = document.getElementById('amountInput');
+                quickAnswers[item.key] = (select && select.value) ? select.value : (item.defaultValue || item.options[0]);
+            } else if (item.type === 'yesno') {
+                if (!quickAnswers[item.key]) quickAnswers[item.key] = 'no';
+            } else if (item.type === 'range_number') {
+                const input = document.getElementById('amountInput');
+                const rawValue = input ? input.value.trim() : '';
+                if (rawValue === '') {
+                    quickAnswers[item.key] = item.allowZero ? 0 : toNumber(item.notSure || 0);
+                } else {
+                    quickAnswers[item.key] = Math.max(0, toNumber(rawValue));
+                }
+            }
+            applyQuickAnswersToUserResponses();
+            return;
+        }
+
         if (item.type === 'select') {
             const select = document.getElementById('amountInput');
             userResponses[item.label] = select && select.value ? select.value : 'skipped';
             return;
         }
-
         if (item.type === 'multiselect') {
             const checkboxes = document.querySelectorAll('.input-group input[type="checkbox"]');
             const selected = [];
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) selected.push(checkbox.value);
-            });
+            checkboxes.forEach(checkbox => { if (checkbox.checked) selected.push(checkbox.value); });
             userResponses[item.label] = selected.length > 0 ? selected : 'skipped';
             return;
         }
-
-        if (item.type === 'calculated') {
-            return;
-        }
-
+        if (item.type === 'calculated') return;
         if (item.type === 'yesno') {
-            if (!userResponses[item.label]) {
-                userResponses[item.label] = 'skipped';
-            }
+            if (!userResponses[item.label]) userResponses[item.label] = 'no';
             return;
         }
 
         const input = document.getElementById('amountInput');
-        if (!input || input.value.trim() === '') {
-            userResponses[item.label] = 'skipped';
-        } else {
-            userResponses[item.label] = input.value.trim();
-        }
+        userResponses[item.label] = (!input || input.value.trim() === '') ? '0' : input.value.trim();
     }
 
-    function handleNext() {
+    async function handleNext() {
         saveCurrentQuestionValue();
+        userResponses.__onboardingMode = questionnaireMode;
+        userResponses.__onboardingComplete = false;
+        await saveUserData();
         currentQuestionIndex += 1;
-        saveUserData();
         showCurrentQuestion();
     }
 
     function handleBack() {
         if (currentQuestionIndex === 0) return;
         currentQuestionIndex -= 1;
-        while (currentQuestionIndex > 0) {
-            const entry = questionFlow[currentQuestionIndex];
-            if (!entry || !shouldSkipQuestion(entry.category, entry.item)) break;
+        while (currentQuestionIndex > 0 && shouldSkipEntry(questionFlow[currentQuestionIndex])) {
             currentQuestionIndex -= 1;
         }
         showCurrentQuestion();
     }
 
-    function handleSkip() {
+    async function handleSkip() {
         const entry = questionFlow[currentQuestionIndex];
-        if (entry) {
-            userResponses[entry.item.label] = 'skipped';
-        }
+        applySmartDefaultForEntry(entry);
+        userResponses.__onboardingMode = questionnaireMode;
+        userResponses.__onboardingComplete = false;
+        await saveUserData();
         currentQuestionIndex += 1;
-        saveUserData();
         showCurrentQuestion();
+    }
+
+    async function handleNotSure() {
+        const entry = questionFlow[currentQuestionIndex];
+        if (!entry || entry.flow !== 'quick' || entry.item.type !== 'range_number') return;
+        const input = document.getElementById('amountInput');
+        const fallback = toNumber(entry.item.notSure || 0);
+        quickAnswers[entry.item.key] = fallback;
+        if (input) input.value = fallback;
+        applyQuickAnswersToUserResponses();
+        await saveUserData();
+        renderLivePreview();
+    }
+
+    function startQuestionnaire(mode) {
+        questionnaireMode = mode;
+        currentQuestionIndex = 0;
+        if (mode === 'quick') {
+            initializeQuickAnswersFromUserResponses();
+            applyQuickAnswersToUserResponses();
+        }
+        questionFlow = buildQuestionFlow(mode);
+        showQuestionnaireView();
     }
 
     function displaySummary() {
@@ -825,6 +1455,9 @@
         html += `<div style="text-align: center;"><div style="font-size: 18px; color: #ff5252;">Annual Spending</div><div style="font-size: 24px; color: #ff5252; font-weight: bold;">$${Math.round(annualSpending).toLocaleString()}</div></div>`;
         html += '</div>';
         html += `<div style="text-align: center; font-size: 24px; color: ${surplusColor}; font-weight: bold;">${surplusText}: $${Math.abs(Math.round(surplus)).toLocaleString()}</div>`;
+        if (questionnaireMode === 'quick') {
+            html += '<div style="text-align:center; color:#9db5ff; margin-top:10px; font-size:13px;">Your fast setup is complete. You can refine details any time.</div>';
+        }
         html += '</div>';
 
         summaryContent.innerHTML = html;
@@ -833,10 +1466,12 @@
 
     quickSetupBtn.addEventListener('click', () => startQuestionnaire('quick'));
     detailedSetupBtn.addEventListener('click', () => startQuestionnaire('detailed'));
-    nextBtn.addEventListener('click', handleNext);
+    nextBtn.addEventListener('click', () => { handleNext(); });
     backBtn.addEventListener('click', handleBack);
-    skipBtn.addEventListener('click', handleSkip);
+    skipBtn.addEventListener('click', () => { handleSkip(); });
+    notSureBtn.addEventListener('click', () => { handleNotSure(); });
     editBtn.addEventListener('click', showSetupChoiceView);
+    refineBtn.addEventListener('click', () => startQuestionnaire('detailed'));
     goDashboardBtn.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
 
     document.addEventListener('keydown', function(event) {
