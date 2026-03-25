@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2901233728197269"
+         crossorigin="anonymous"></script>
     <title>Dashboard - BonoBudget</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -590,7 +592,7 @@
         </div>
         
         <!-- Bottom Banner Ad -->
-        <div style="margin-top: 30px; text-align: center;">
+        <div id="bottomAdContainer" style="margin-top: 30px; text-align: center;">
             <div class="ad-banner" style="height: 120px; margin: 0 auto; max-width: 728px;">
                 <ins class="adsbygoogle ad-unit"
                      data-slot-key="bottomBanner"
@@ -746,9 +748,7 @@
             rightMiddle: '',
             rightBottom: '',
             bottomBanner: ''
-        },
-        testClient: 'ca-pub-3940256099942544',
-        testSlot: '6300978111'
+        }
     };
 
     const budgetTargetsList = document.getElementById('budgetTargetsList');
@@ -784,22 +784,21 @@
         return typeof slot === 'string' && /^\d{6,}$/.test(slot);
     }
 
-    function hasAllLiveSlots() {
-        return Object.values(ADSENSE_CONFIG.liveSlots).every(isValidAdSlot);
+    function hasAnyLiveSlots() {
+        return Object.values(ADSENSE_CONFIG.liveSlots).some(isValidAdSlot);
     }
 
     function getAdClient() {
-        return hasAllLiveSlots() ? ADSENSE_CONFIG.liveClient : ADSENSE_CONFIG.testClient;
+        return ADSENSE_CONFIG.liveClient;
     }
 
     function getAdSlot(slotKey) {
-        const liveSlot = ADSENSE_CONFIG.liveSlots[slotKey];
-        return isValidAdSlot(liveSlot) ? liveSlot : ADSENSE_CONFIG.testSlot;
+        return ADSENSE_CONFIG.liveSlots[slotKey] || '';
     }
 
     function loadAdsenseScript(client) {
         return new Promise((resolve, reject) => {
-            const existing = document.getElementById('adsense-loader');
+            const existing = document.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]');
             if (existing) {
                 resolve();
                 return;
@@ -819,28 +818,40 @@
     async function initializeAds() {
         if (adsInitialized) return;
         const adUnits = Array.from(document.querySelectorAll('.adsbygoogle[data-slot-key]'));
-        if (!adUnits.length) return;
+        if (!adUnits.length) {
+            adsInitialized = true;
+            return;
+        }
 
-        const usingLiveAds = hasAllLiveSlots();
+        if (!hasAnyLiveSlots()) {
+            document.querySelectorAll('.ad-sidebar').forEach(sidebar => { sidebar.style.display = 'none'; });
+            const bottomAdContainer = document.getElementById('bottomAdContainer');
+            if (bottomAdContainer) bottomAdContainer.style.display = 'none';
+            adsInitialized = true;
+            console.info('Manual ad slots are not configured. Auto Ads from the head script will handle placements.');
+            return;
+        }
+
         const client = getAdClient();
-
+        const initializedUnits = [];
         adUnits.forEach(unit => {
-            unit.dataset.adClient = client;
-            unit.dataset.adSlot = getAdSlot(unit.dataset.slotKey);
-            if (!usingLiveAds) {
-                unit.dataset.adtest = 'on';
+            const slot = getAdSlot(unit.dataset.slotKey);
+            if (!isValidAdSlot(slot)) {
+                const banner = unit.closest('.ad-banner');
+                if (banner) banner.style.display = 'none';
+                return;
             }
+            unit.dataset.adClient = client;
+            unit.dataset.adSlot = slot;
+            initializedUnits.push(unit);
         });
 
         try {
             await loadAdsenseScript(client);
-            adUnits.forEach(() => {
+            initializedUnits.forEach(() => {
                 (window.adsbygoogle = window.adsbygoogle || []).push({});
             });
             adsInitialized = true;
-            if (!usingLiveAds) {
-                console.warn('AdSense is running in TEST mode. Set ADSENSE_CONFIG.liveSlots in dashboard.html to your real slot IDs.');
-            }
         } catch (error) {
             console.error('AdSense init failed:', error);
         }
