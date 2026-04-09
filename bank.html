@@ -7,8 +7,82 @@
          crossorigin="anonymous"></script>
     <title>Bank - Bonobudget</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #111; color: #fff; font-family: 'Montserrat', Arial, sans-serif; margin: 0; }
+        body { background: radial-gradient(circle at top left, #1b1f2b 0%, #101114 55%, #0b0c0f 100%); color: #fff; font-family: 'Montserrat', Arial, sans-serif; margin: 0; min-height: 100vh; }
+        .app-shell { display: flex; min-height: 100vh; }
+        .app-sidebar {
+            width: 88px;
+            background: rgba(14, 16, 22, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 12px;
+            gap: 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        .brand-pill {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #4caf50, #2f7e34);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 10px 24px rgba(76, 175, 80, 0.28);
+        }
+        .nav-rail { display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center; }
+        .rail-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+            color: #cfd8dc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+        .rail-btn:hover { color: #fff; border-color: rgba(129, 201, 255, 0.55); background: rgba(129, 201, 255, 0.12); transform: translateY(-1px); }
+        .rail-btn.active { color: #fff; border-color: rgba(76, 175, 80, 0.8); background: rgba(76, 175, 80, 0.22); box-shadow: 0 10px 20px rgba(76, 175, 80, 0.22); }
+        .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+        .workspace { flex: 1; padding: 20px 22px 30px; }
+        .workspace-header {
+            background: rgba(25, 28, 36, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .workspace-title { font-size: 22px; font-weight: 700; color: #e9f5ee; margin-bottom: 6px; }
+        .workspace-subtitle { color: #9be5a8; font-size: 13px; }
+        .workspace-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .profile-email {
+            color: #d1d5db;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            padding: 8px 12px;
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .logout-btn { background: #e53935; color: #fff; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; transition: background 0.2s; font-size: 13px; font-weight: 600; }
+        .logout-btn:hover { background: #d32f2f; }
         .header { background: #222; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border-radius: 0 0 20px 20px; }
         .logo { font-size: 24px; font-weight: bold; color: #4caf50; }
         .nav { display: flex; gap: 30px; }
@@ -16,10 +90,7 @@
         .nav-item:hover { background: #333; color: #fff; }
         .nav-item.active { background: #4caf50; color: #fff; }
         .profile { display: flex; align-items: center; gap: 15px; }
-        .profile-email { color: #ccc; }
-        .logout-btn { background: #ff5252; color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; transition: background 0.2s; }
-        .logout-btn:hover { background: #d32f2f; }
-        .container { padding: 30px; max-width: 1200px; margin: 0 auto; }
+        .container { padding: 0; max-width: 1200px; margin: 0 auto; }
         .question-container { background: #222; padding: 40px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-align: center; }
         .question-title { color: #4caf50; font-size: 24px; margin-bottom: 20px; }
         .question-text { color: #ccc; font-size: 18px; margin-bottom: 30px; }
@@ -163,7 +234,26 @@
         .refine-btn:hover { background: #4a148c; }
         @media (max-width: 900px) {
             .setup-grid { grid-template-columns: 1fr; }
-            .container { padding: 20px; }
+            .workspace { padding: 14px; }
+        }
+        @media (max-width: 768px) {
+            .app-shell { flex-direction: column; }
+            .app-sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 12px 14px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .nav-rail { flex-direction: row; width: auto; gap: 8px; }
+            .sidebar-bottom { margin-top: 0; width: auto; flex-direction: row; }
+            .brand-pill { width: 44px; height: 44px; border-radius: 14px; font-size: 18px; }
+            .rail-btn { width: 42px; height: 42px; border-radius: 12px; font-size: 15px; }
+            .workspace-header { flex-direction: column; align-items: flex-start; }
+            .workspace-title { font-size: 20px; }
         }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
