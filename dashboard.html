@@ -18,86 +18,163 @@
         
         body {
             font-family: 'Montserrat', sans-serif;
-            background: #111;
+            background: radial-gradient(circle at top left, #1b1f2b 0%, #101114 55%, #0b0c0f 100%);
             min-height: 100vh;
             color: white;
         }
         
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 0;
         }
-        
-        .header {
-            background: #222;
-            padding: 15px 30px;
+
+        .app-shell {
             display: flex;
-            justify-content: space-between;
+            min-height: 100vh;
+        }
+
+        .app-sidebar {
+            width: 88px;
+            background: rgba(14, 16, 22, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            border-radius: 0 0 20px 20px;
+            padding: 18px 12px;
+            gap: 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
         }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4caf50;
-        }
-        
-        .nav {
+
+        .brand-pill {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #4caf50, #2f7e34);
             display: flex;
-            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 10px 24px rgba(76, 175, 80, 0.28);
         }
         
-        .nav-item {
-            color: #ccc;
-            text-decoration: none;
-            padding: 12px 20px;
-            border-radius: 15px;
-            transition: all 0.2s;
+        .nav-rail {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .rail-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+            color: #cfd8dc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
         }
-        
-        .nav-item:hover {
-            background: #333;
+
+        .rail-btn:hover {
             color: #fff;
+            border-color: rgba(129, 201, 255, 0.55);
+            background: rgba(129, 201, 255, 0.12);
+            transform: translateY(-1px);
         }
-        
-        .nav-item.active {
-            background: #4caf50;
+
+        .rail-btn.active {
             color: #fff;
+            border-color: rgba(76, 175, 80, 0.8);
+            background: rgba(76, 175, 80, 0.22);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.22);
         }
-        
-        .profile {
+
+        .sidebar-bottom {
+            margin-top: auto;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
+            width: 100%;
         }
-        
-        .profile-email {
-            color: #ccc;
+
+        .workspace {
+            flex: 1;
+            padding: 20px 22px 30px;
         }
-        
-        .user-info {
+
+        .workspace-header {
+            background: rgba(25, 28, 36, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 18px 20px;
             display: flex;
             align-items: center;
             gap: 20px;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
-        
-        .user-email {
-            font-size: 14px;
-            opacity: 0.9;
+
+        .workspace-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e9f5ee;
+            margin-bottom: 6px;
         }
-        
+
+        .workspace-tools {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .profile-email {
+            color: #d1d5db;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            padding: 8px 12px;
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .idea-btn,
         .logout-btn {
-            background: #ff5252;
-            color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 15px;
+            padding: 10px 14px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .idea-btn {
+            background: #1976d2;
+            color: #fff;
+        }
+
+        .idea-btn:hover {
+            background: #1565c0;
+        }
+
+        .logout-btn {
+            background: #e53935;
+            color: #fff;
         }
         
         .logout-btn:hover {
@@ -105,10 +182,10 @@
         }
         
         .welcome-text {
-            text-align: center;
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #4caf50;
+            text-align: left;
+            font-size: 14px;
+            margin-bottom: 0;
+            color: #9be5a8;
         }
         
         /* Google Ads Styling */
@@ -120,7 +197,7 @@
         }
         
         .ad-sidebar {
-            width: 300px;
+            width: 240px;
             min-height: 600px;
             background: #222;
             border-radius: 20px;
@@ -354,6 +431,77 @@
             height: 100%;
             background: linear-gradient(90deg, #4caf50, #81c784);
         }
+
+        .documents-layout {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        .folder-card {
+            border: 1px solid #40454f;
+            border-radius: 12px;
+            background: #2f3440;
+            padding: 12px;
+        }
+
+        .folder-name {
+            color: #e3e8ef;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .folder-meta {
+            font-size: 11px;
+            color: #9ea7b4;
+        }
+
+        .file-row {
+            border: 1px solid #3c414b;
+            border-radius: 10px;
+            background: #2d3138;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .file-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .file-name {
+            color: #e2e6eb;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+
+        .file-meta {
+            color: #9fa9b8;
+            font-size: 11px;
+        }
+
+        .section-anchor {
+            scroll-margin-top: 20px;
+        }
         
         .content-wrapper {
             display: flex;
@@ -362,6 +510,15 @@
         
         /* Responsive Design */
         @media (max-width: 1200px) {
+            .workspace {
+                padding: 14px;
+            }
+
+            .workspace-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
             .content-wrapper {
                 flex-direction: column;
             }
@@ -383,17 +540,56 @@
             .inline-form-4 {
                 grid-template-columns: 1fr;
             }
+
+            .documents-layout {
+                grid-template-columns: 1fr;
+            }
         }
         
         @media (max-width: 768px) {
-            .header {
+            .app-shell {
                 flex-direction: column;
-                gap: 15px;
             }
-            
-            .user-info {
-                flex-direction: column;
-                gap: 10px;
+
+            .app-sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 12px 14px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .nav-rail {
+                flex-direction: row;
+                width: auto;
+                gap: 8px;
+            }
+
+            .sidebar-bottom {
+                margin-top: 0;
+                width: auto;
+                flex-direction: row;
+            }
+
+            .brand-pill {
+                width: 44px;
+                height: 44px;
+                border-radius: 14px;
+                font-size: 18px;
+            }
+
+            .rail-btn {
+                width: 42px;
+                height: 42px;
+                border-radius: 12px;
+                font-size: 15px;
+            }
+
+            .workspace-title {
+                font-size: 20px;
             }
         }
     </style>
@@ -406,24 +602,48 @@
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">Bonobudget</div>
-        <div class="nav">
-            <div class="nav-item active">Dashboard</div>
-            <div class="nav-item" onclick="window.location.href='bank.html'">Bank</div>
-            <div class="nav-item" onclick="window.location.href='goals.html'">Goals</div>
-        </div>
-        <div class="profile">
-            <div class="profile-email" id="userEmail"></div>
-            <button class="logout-btn" id="logoutBtn">Logout</button>
-        </div>
-    </div>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="brand-pill">B</div>
+            <nav class="nav-rail">
+                <button class="rail-btn active" type="button" title="Dashboard">
+                    <i class="fa-solid fa-chart-line"></i>
+                </button>
+                <button class="rail-btn" type="button" title="Bank Setup" onclick="window.location.href='bank.html'">
+                    <i class="fa-solid fa-building-columns"></i>
+                </button>
+                <button class="rail-btn" type="button" title="Goals" onclick="window.location.href='goals.html'">
+                    <i class="fa-solid fa-bullseye"></i>
+                </button>
+                <button class="rail-btn" type="button" title="Documents" onclick="document.getElementById('docsVaultPanel').scrollIntoView({ behavior: 'smooth' });">
+                    <i class="fa-regular fa-folder-open"></i>
+                </button>
+                <button class="rail-btn" type="button" title="Insights" onclick="document.getElementById('overviewSection').scrollIntoView({ behavior: 'smooth' });">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </button>
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="rail-btn" type="button" title="Tax Vault" onclick="document.getElementById('docsVaultPanel').scrollIntoView({ behavior: 'smooth' });">
+                    <i class="fa-solid fa-folder-tree"></i>
+                </button>
+            </div>
+        </aside>
 
-    <div class="container">
-        
-        <div class="welcome-text" id="welcome"></div>
-        
-        <div class="content-wrapper">
+        <main class="workspace">
+            <div class="workspace-header">
+                <div>
+                    <div class="workspace-title">Financial Command Center</div>
+                    <div class="welcome-text" id="welcome"></div>
+                </div>
+                <div class="workspace-tools">
+                    <button class="idea-btn" id="newIdeaBtn" type="button"><i class="fa-regular fa-lightbulb"></i> New Idea</button>
+                    <div class="profile-email" id="userEmail"></div>
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="content-wrapper">
             <!-- Left Sidebar Ads -->
             <div class="ad-sidebar">
                 <div class="ad-banner">
@@ -462,7 +682,7 @@
                     Annual Overview
                 </div>
 
-                <div class="panel" style="margin-bottom: 30px;">
+                <div class="panel section-anchor" id="overviewSection" style="margin-bottom: 30px;">
                     <h3 class="panel-title">Money Flow (Sankey)</h3>
                     <div id="chartEmptyState" class="empty-state" style="display: none;"></div>
                     <div id="sankeyChart" class="sankey-container"></div>
@@ -564,6 +784,28 @@
                         <div id="exportSummary" class="stack" style="margin-top: 12px;"></div>
                     </div>
                 </div>
+
+                <div class="panel section-anchor" id="docsVaultPanel" style="margin-top: 30px;">
+                    <h3 class="panel-title">Documents Vault</h3>
+                    <div class="muted">Store tax PDFs and important records in folder-like spaces so key paperwork is always easy to find.</div>
+                    <div class="inline-form-4" style="margin-top: 14px;">
+                        <select id="docFolderSelect" class="form-select"></select>
+                        <input id="newFolderInput" class="form-input" type="text" placeholder="New folder name (e.g., 2025 Taxes)">
+                        <button id="createFolderBtn" class="form-btn alt" type="button">Create Folder</button>
+                        <button id="uploadDocBtn" class="form-btn" type="button">Upload PDF</button>
+                    </div>
+                    <input id="docFileInput" type="file" accept="application/pdf,.pdf" multiple style="display:none;">
+                    <div class="documents-layout">
+                        <div>
+                            <div class="muted" style="margin-bottom: 8px;">Folders</div>
+                            <div id="folderList" class="folder-grid"></div>
+                        </div>
+                        <div>
+                            <div class="muted" style="margin-bottom: 8px;">Recent Uploads</div>
+                            <div id="documentsList" class="stack"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Right Sidebar Ads -->
@@ -600,6 +842,8 @@
                      data-full-width-responsive="true"></ins>
             </div>
         </div>
+            </div>
+        </main>
     </div>
     <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -779,6 +1023,23 @@
     const exportJsonBtn = document.getElementById('exportJsonBtn');
     const printReportBtn = document.getElementById('printReportBtn');
     const exportSummary = document.getElementById('exportSummary');
+    const newIdeaBtn = document.getElementById('newIdeaBtn');
+    const docFolderSelect = document.getElementById('docFolderSelect');
+    const newFolderInput = document.getElementById('newFolderInput');
+    const createFolderBtn = document.getElementById('createFolderBtn');
+    const uploadDocBtn = document.getElementById('uploadDocBtn');
+    const docFileInput = document.getElementById('docFileInput');
+    const folderList = document.getElementById('folderList');
+    const documentsList = document.getElementById('documentsList');
+
+    const DOC_VAULT_STORAGE_KEY = 'bonobudget_document_vault_v1';
+    const DEFAULT_DOC_FOLDERS = [
+        { id: 'tax_returns', name: 'Tax Returns' },
+        { id: 'w2_1099', name: 'W-2 / 1099' },
+        { id: 'deductions', name: 'Deductions' },
+        { id: 'receipts', name: 'Receipts' }
+    ];
+    let documentVault = { folders: [...DEFAULT_DOC_FOLDERS], files: [] };
 
     function isValidAdSlot(slot) {
         return typeof slot === 'string' && /^\d{6,}$/.test(slot);
@@ -895,6 +1156,169 @@
 
     function createId(prefix) {
         return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    }
+
+    function formatFileSize(bytes) {
+        const size = toAmount(bytes);
+        if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+        if (size >= 1024) return `${(size / 1024).toFixed(1)} KB`;
+        return `${Math.max(0, Math.round(size))} B`;
+    }
+
+    function formatShortDate(value) {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return 'Today';
+        return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function buildDefaultVault() {
+        return {
+            folders: DEFAULT_DOC_FOLDERS.map(folder => ({ ...folder })),
+            files: []
+        };
+    }
+
+    function loadDocumentVault() {
+        try {
+            const raw = localStorage.getItem(DOC_VAULT_STORAGE_KEY);
+            if (!raw) {
+                documentVault = buildDefaultVault();
+                return;
+            }
+            const parsed = JSON.parse(raw);
+            const parsedFolders = Array.isArray(parsed?.folders) ? parsed.folders : [];
+            const parsedFiles = Array.isArray(parsed?.files) ? parsed.files : [];
+
+            const folders = parsedFolders
+                .map(folder => ({
+                    id: String(folder.id || createId('folder')).trim(),
+                    name: String(folder.name || '').trim()
+                }))
+                .filter(folder => folder.id && folder.name);
+
+            const files = parsedFiles
+                .map(file => ({
+                    id: String(file.id || createId('file')).trim(),
+                    name: String(file.name || '').trim(),
+                    folderId: String(file.folderId || '').trim(),
+                    size: toAmount(file.size),
+                    uploadedAt: file.uploadedAt || new Date().toISOString()
+                }))
+                .filter(file => file.name && file.folderId);
+
+            const mergedFolders = [...DEFAULT_DOC_FOLDERS];
+            folders.forEach(folder => {
+                if (!mergedFolders.some(existing => existing.id === folder.id || existing.name.toLowerCase() === folder.name.toLowerCase())) {
+                    mergedFolders.push(folder);
+                }
+            });
+
+            documentVault = { folders: mergedFolders, files };
+        } catch (error) {
+            console.error('Could not load document vault data:', error);
+            documentVault = buildDefaultVault();
+        }
+    }
+
+    function saveDocumentVault() {
+        localStorage.setItem(DOC_VAULT_STORAGE_KEY, JSON.stringify(documentVault));
+    }
+
+    function renderDocumentVault() {
+        if (!folderList || !documentsList || !docFolderSelect) return;
+
+        const folderCounts = {};
+        documentVault.folders.forEach(folder => { folderCounts[folder.id] = 0; });
+        documentVault.files.forEach(file => {
+            folderCounts[file.folderId] = (folderCounts[file.folderId] || 0) + 1;
+        });
+
+        docFolderSelect.innerHTML = documentVault.folders
+            .map(folder => `<option value="${escapeHtml(folder.id)}">${escapeHtml(folder.name)}</option>`)
+            .join('');
+        if (documentVault.folders.length && !docFolderSelect.value) {
+            docFolderSelect.value = documentVault.folders[0].id;
+        }
+
+        folderList.innerHTML = documentVault.folders.map(folder => `
+            <div class="folder-card">
+                <div class="folder-name"><i class="fa-regular fa-folder"></i> ${escapeHtml(folder.name)}</div>
+                <div class="folder-meta">${folderCounts[folder.id] || 0} file(s)</div>
+            </div>
+        `).join('');
+
+        const sortedFiles = [...documentVault.files]
+            .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+            .slice(0, 8);
+
+        if (!sortedFiles.length) {
+            documentsList.innerHTML = '<div class="empty-state">No documents yet. Upload your first tax PDF.</div>';
+            return;
+        }
+
+        documentsList.innerHTML = sortedFiles.map(file => {
+            const folder = documentVault.folders.find(entry => entry.id === file.folderId);
+            const folderName = folder ? folder.name : 'Folder';
+            return `
+                <div class="file-row">
+                    <div class="file-main">
+                        <i class="fa-regular fa-file-pdf" style="color:#ef5350;"></i>
+                        <div>
+                            <div class="file-name">${escapeHtml(file.name)}</div>
+                            <div class="file-meta">${escapeHtml(folderName)} • ${formatShortDate(file.uploadedAt)}</div>
+                        </div>
+                    </div>
+                    <div class="file-meta">${formatFileSize(file.size)}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function createDocumentFolder() {
+        if (!newFolderInput) return;
+        const folderName = newFolderInput.value.trim();
+        if (!folderName) return;
+
+        const duplicate = documentVault.folders.some(folder => folder.name.toLowerCase() === folderName.toLowerCase());
+        if (duplicate) {
+            newFolderInput.value = '';
+            return;
+        }
+
+        const folder = {
+            id: createId('folder'),
+            name: folderName
+        };
+        documentVault.folders.push(folder);
+        newFolderInput.value = '';
+        saveDocumentVault();
+        renderDocumentVault();
+        if (docFolderSelect) docFolderSelect.value = folder.id;
+    }
+
+    function handleDocumentUpload(files) {
+        const selectedFolderId = docFolderSelect && docFolderSelect.value ? docFolderSelect.value : documentVault.folders[0]?.id;
+        if (!selectedFolderId) return;
+
+        const validFiles = Array.from(files || []).filter(file => {
+            const byMime = file.type === 'application/pdf';
+            const byName = /\.pdf$/i.test(file.name || '');
+            return byMime || byName;
+        });
+        if (!validFiles.length) return;
+
+        validFiles.forEach(file => {
+            documentVault.files.push({
+                id: createId('file'),
+                name: file.name || 'Untitled.pdf',
+                folderId: selectedFolderId,
+                size: toAmount(file.size),
+                uploadedAt: new Date().toISOString()
+            });
+        });
+        documentVault.files = documentVault.files.slice(-200);
+        saveDocumentVault();
+        renderDocumentVault();
     }
 
     function getExpenseCategories(model) {
@@ -1203,6 +1627,44 @@
     function initializeFeatureHandlers() {
         if (isFeatureHandlersBound) return;
         isFeatureHandlersBound = true;
+
+        loadDocumentVault();
+        renderDocumentVault();
+
+        if (newIdeaBtn) {
+            newIdeaBtn.addEventListener('click', () => {
+                const docsPanel = document.getElementById('docsVaultPanel');
+                if (!docsPanel) return;
+                docsPanel.scrollIntoView({ behavior: 'smooth' });
+                if (newFolderInput) {
+                    window.setTimeout(() => newFolderInput.focus(), 220);
+                }
+            });
+        }
+
+        if (createFolderBtn) {
+            createFolderBtn.addEventListener('click', () => {
+                createDocumentFolder();
+            });
+        }
+
+        if (newFolderInput) {
+            newFolderInput.addEventListener('keydown', event => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                createDocumentFolder();
+            });
+        }
+
+        if (uploadDocBtn && docFileInput) {
+            uploadDocBtn.addEventListener('click', () => {
+                docFileInput.click();
+            });
+            docFileInput.addEventListener('change', event => {
+                handleDocumentUpload(event.target.files);
+                docFileInput.value = '';
+            });
+        }
 
         saveBudgetBtn.addEventListener('click', async () => {
             const category = budgetCategoryInput.value;
